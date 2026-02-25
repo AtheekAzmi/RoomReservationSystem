@@ -1,279 +1,276 @@
-// ═══════════════════════════════════════════════════
-//  app.js  — clean version, no DB sessions
-// ═══════════════════════════════════════════════════
+'use strict';
 
-var API = {
-
-    token:   function(){ return localStorage.getItem('token');    },
-    role:    function(){ return localStorage.getItem('role');     },
-    name:    function(){ return localStorage.getItem('fullName'); },
-    staffId: function(){ return localStorage.getItem('staffId');  },
-
-    headers: function(){
-        return {
-            'Content-Type' : 'application/json',
-            'Authorization': 'Bearer ' + (this.token() || '')
-        };
-    },
-
-    _url: function(path){
-        if (path.charAt(0) === '/') path = path.substring(1);
-        return window.location.origin + '/' + path;
-    },
-
-    get: async function(url){
-        var res  = await fetch(this._url(url),
-            { method:'GET', headers:this.headers() });
-        var json = await res.json();
-        if (res.status === 401){ Auth.goLogin(); return null; }
-        if (!res.ok) throw new Error(json.error || 'Request failed');
-        return json;
-    },
-
-    post: async function(url, body){
-        var res  = await fetch(this._url(url), {
-            method : 'POST',
-            headers: this.headers(),
-            body   : JSON.stringify(body)
-        });
-        var json = await res.json();
-        if (res.status === 401){ Auth.goLogin(); return null; }
-        if (!res.ok) throw new Error(json.error || 'Request failed');
-        return json;
-    },
-
-    put: async function(url, body){
-        var res  = await fetch(this._url(url), {
-            method : 'PUT',
-            headers: this.headers(),
-            body   : JSON.stringify(body)
-        });
-        var json = await res.json();
-        if (res.status === 401){ Auth.goLogin(); return null; }
-        if (!res.ok) throw new Error(json.error || 'Request failed');
-        return json;
-    },
-
-    del: async function(url){
-        var res  = await fetch(this._url(url),
-            { method:'DELETE', headers:this.headers() });
-        var json = await res.json();
-        if (res.status === 401){ Auth.goLogin(); return null; }
-        if (!res.ok) throw new Error(json.error || 'Request failed');
-        return json;
-    }
-};
-
-// ── Auth ──────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+//  AUTH — thin wrapper around sessionStorage
+// ══════════════════════════════════════════════════════════════
 var Auth = {
+    get: function(key){ return sessionStorage.getItem(key); },
+    set: function(key, val){ sessionStorage.setItem(key, val); },
+    clear: function(){ sessionStorage.clear(); },
+    name: function(){ return sessionStorage.getItem('userName') || sessionStorage.getItem('name') || 'User'; },
+    role: function(){ return (sessionStorage.getItem('userRole') || sessionStorage.getItem('role') || '').toLowerCase(); },
+    isAdmin: function(){ return Auth.role() === 'admin'; },
     isLoggedIn: function(){
-        return !!localStorage.getItem('token');
-    },
-    requireAuth: function(){
-        if (!this.isLoggedIn()){
-            this.goLogin(); return false;
-        }
-        return true;
-    },
-    goLogin: function(){
-        localStorage.clear();
-        // Avoid redirect loop
-        if (window.location.pathname.indexOf('index') === -1){
-            window.location.href = 'index.html';
-        }
-    },
-    logout: function(){
-        var token = localStorage.getItem('token');
-        localStorage.clear();
-        if (token){
-            fetch(window.location.origin + '/api/auth/logout', {
-                method:'POST',
-                headers:{
-                    'Content-Type':'application/json',
-                    'Authorization':'Bearer ' + token
-                }
-            }).finally(function(){
-                window.location.href = 'index.html';
-            });
-        } else {
-            window.location.href = 'index.html';
-        }
+        return !!(sessionStorage.getItem('authToken') ||
+            sessionStorage.getItem('token') ||
+            sessionStorage.getItem('sessionId') ||
+            sessionStorage.getItem('userId'));
     }
 };
 
-// ── Toast ─────────────────────────────────────────
-var Toast = {
-    show: function(message, type, duration){
-        type     = type     || 'success';
-        duration = duration || 4000;
+// ══════════════════════════════════════════════════════════════
+//  API — centralised fetch wrapper
+// ══════════════════════════════════════════════════════════════
+var API = (function(){
+    var BASE = '';   // Tomcat serves from root context
 
-        var box = document.getElementById('_toastBox');
-        if (!box){
-            box = document.createElement('div');
-            box.id = '_toastBox';
-            Object.assign(box.style, {
-                position:'fixed', top:'1rem', right:'1rem',
-                zIndex:'9999', minWidth:'260px'
-            });
-            document.body.appendChild(box);
+    function getToken(){
+        return sessionStorage.getItem('authToken') ||
+            sessionStorage.getItem('token') || '';
+    }
+
+    function headers(extra){
+        var h = { 'Content-Type': 'application/json' };
+        var t = getToken();
+        if (t) h['Authorization'] = 'Bearer ' + t;
+        return Object.assign(h, extra || {});
+    }
+
+    async function req(method, url, body){
+        var opts = { method: method, headers: headers() };
+        if (body !== undefined) opts.body = JSON.stringify(body);
+        var res = await fetch(url, opts);
+        if (res.status === 401){
+            Auth.clear();
+            window.location.href = 'index.html';
+            return null;
         }
+        var text = await res.text();
+        if (!text) return {};
+        var json;
+        try { json = JSON.parse(text); } catch(e){ json = { message: text }; }
+        if (!res.ok){
+            throw new Error(json.message || json.error || ('HTTP ' + res.status));
+        }
+        return json;
+    }
+
+    return {
+        get:    function(url)       { return req('GET',    url); },
+        post:   function(url, body) { return req('POST',   url, body); },
+        put:    function(url, body) { return req('PUT',    url, body); },
+        delete: function(url)       { return req('DELETE', url); }
+    };
+})();
+
+// ══════════════════════════════════════════════════════════════
+//  TOAST notifications
+// ══════════════════════════════════════════════════════════════
+var Toast = (function(){
+    var container;
+
+    function ensure(){
+        if (!container){
+            container = document.createElement('div');
+            container.style.cssText =
+                'position:fixed;top:1rem;right:1rem;z-index:9999;' +
+                'display:flex;flex-direction:column;gap:.5rem;min-width:280px;max-width:380px';
+            document.body.appendChild(container);
+        }
+    }
+
+    function show(msg, type, ms){
+        ensure();
+        ms = ms || 3500;
+        type = type || 'info';
 
         var colors = {
-            success:'#198754', danger:'#dc3545',
-            warning:'#ffc107', info:'#0dcaf0'
+            success: { bg:'#d1fae5', border:'#6ee7b7', text:'#065f46', icon:'bi-check-circle-fill' },
+            error:   { bg:'#fee2e2', border:'#fca5a5', text:'#991b1b', icon:'bi-exclamation-circle-fill' },
+            warning: { bg:'#fef3c7', border:'#fcd34d', text:'#92400e', icon:'bi-exclamation-triangle-fill' },
+            info:    { bg:'#dbeafe', border:'#93c5fd', text:'#1e40af', icon:'bi-info-circle-fill' }
         };
-        var textColor = (type === 'warning' || type === 'info')
-            ? '#000' : '#fff';
-        var id  = 'toast_' + Date.now();
-        var div = document.createElement('div');
-        div.id  = id;
-        Object.assign(div.style, {
-            background   : colors[type] || colors.info,
-            color        : textColor,
-            padding      : '.75rem 1rem',
-            borderRadius : '8px',
-            marginBottom : '.5rem',
-            display      : 'flex',
-            alignItems   : 'center',
-            justifyContent:'space-between',
-            boxShadow    : '0 4px 12px rgba(0,0,0,.2)',
-            fontSize     : '.875rem',
-            animation    : 'fadeIn .3s ease'
-        });
-        div.innerHTML =
-            '<span>' + message + '</span>' +
-            '<button onclick="document.getElementById(\'' + id +
-            '\').remove()" style="background:transparent;border:none;' +
-            'color:' + textColor + ';font-size:1.1rem;cursor:pointer;' +
-            'margin-left:.75rem;line-height:1">×</button>';
+        var c = colors[type] || colors.info;
 
-        box.appendChild(div);
+        var el = document.createElement('div');
+        el.style.cssText =
+            'background:' + c.bg + ';border:1.5px solid ' + c.border + ';' +
+            'color:' + c.text + ';border-radius:10px;padding:.75rem 1rem;' +
+            'display:flex;align-items:flex-start;gap:.5rem;' +
+            'box-shadow:0 4px 16px rgba(0,0,0,.12);' +
+            'animation:toastIn .25s ease;font-size:.875rem;';
+        el.innerHTML =
+            '<i class="bi ' + c.icon + '" style="flex-shrink:0;font-size:1rem;margin-top:.1rem"></i>' +
+            '<span style="flex:1">' + msg + '</span>' +
+            '<button onclick="this.parentElement.remove()" ' +
+            'style="background:none;border:none;color:' + c.text + ';' +
+            'cursor:pointer;padding:0;font-size:1rem;opacity:.6;line-height:1">' +
+            '&times;</button>';
+
+        container.appendChild(el);
         setTimeout(function(){
-            var el = document.getElementById(id);
-            if (el) el.remove();
-        }, duration);
+            el.style.animation = 'toastOut .25s ease forwards';
+            setTimeout(function(){ if (el.parentNode) el.remove(); }, 250);
+        }, ms);
     }
-};
 
-// ── Helpers ───────────────────────────────────────
+    // Inject keyframes once
+    var style = document.createElement('style');
+    style.textContent =
+        '@keyframes toastIn{from{opacity:0;transform:translateX(100%)}to{opacity:1;transform:translateX(0)}}' +
+        '@keyframes toastOut{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(100%)}}';
+    document.head.appendChild(style);
+
+    return { show: show };
+})();
+
+// ══════════════════════════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════════════════════════
+function fmtMoney(val){
+    var n = parseFloat(val) || 0;
+    return '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
 function fmtDate(d){
     if (!d) return '—';
     try {
-        return new Date(d).toLocaleDateString('en-US',
-            { year:'numeric', month:'short', day:'numeric' });
+        return new Date(d).toLocaleDateString('en-US', {
+            month:'short', day:'numeric', year:'numeric'
+        });
     } catch(e){ return d; }
-}
-
-function fmtMoney(n){
-    return '$' + parseFloat(n || 0).toFixed(2);
 }
 
 function statusBadge(status){
     var map = {
-        'CONFIRMED'   : 'primary',
-        'CHECKED_IN'  : 'success',
-        'CHECKED_OUT' : 'secondary',
-        'CANCELLED'   : 'danger',
-        'AVAILABLE'   : 'success',
-        'OCCUPIED'    : 'warning',
-        'MAINTENANCE' : 'danger',
-        'PAID'        : 'success',
-        'PARTIAL'     : 'info',
-        'PENDING'     : 'warning',
-        'admin'       : 'dark',
-        'receptionist': 'primary'
+        'CONFIRMED'   :['#dbeafe','#1e40af','Confirmed'],
+        'CHECKED_IN'  :['#d1fae5','#065f46','Checked In'],
+        'CHECKED_OUT' :['#f3f4f6','#374151','Checked Out'],
+        'CANCELLED'   :['#fee2e2','#991b1b','Cancelled'],
+        'PENDING'     :['#fef3c7','#92400e','Pending']
     };
-    var c = map[status] || 'secondary';
-    var textDark = (c==='warning'||c==='info') ? ' text-dark' : '';
-    return '<span class="badge bg-' + c + textDark +
-        ' rounded-pill">' +
-        (status||'').replace(/_/g,' ') + '</span>';
+    var s = map[status] || ['#f3f4f6','#374151', status||'Unknown'];
+    return '<span style="display:inline-block;padding:.2rem .65rem;' +
+        'border-radius:20px;background:' + s[0] + ';color:' + s[1] + ';' +
+        'font-size:.75rem;font-weight:700;letter-spacing:.3px">' + s[2] + '</span>';
 }
 
-function emptyState(icon, msg){
-    return '<div class="text-center py-5 text-muted">' +
-        '<i class="bi ' + icon + '" style="font-size:3rem;opacity:.25"></i>' +
-        '<p class="mt-2 mb-0">' + msg + '</p></div>';
+// ══════════════════════════════════════════════════════════════
+//  SIDEBAR + PAGE INIT
+// ══════════════════════════════════════════════════════════════
+function initPage(currentPage){
+    // Auth guard
+    if (!Auth.isLoggedIn() && currentPage !== 'index.html'){
+        window.location.href = 'index.html';
+        return;
+    }
+
+    // Topbar user info
+    var u = document.getElementById('topbarUser');
+    var r = document.getElementById('topbarRole');
+    if (u) u.textContent = Auth.name();
+    if (r){ r.textContent = Auth.role(); r.className = 'badge ' + (Auth.isAdmin() ? 'bg-danger' : 'bg-secondary'); }
+
+    buildSidebar(currentPage);
 }
 
-// ── Sidebar ───────────────────────────────────────
-function buildSidebar(active){
-    var role     = Auth.role() || 'receptionist';
-    var name     = Auth.name() || 'User';
-    var initials = name.trim().split(' ')
-        .map(function(w){ return w[0]||''; })
-        .join('').toUpperCase().slice(0,2);
+function buildSidebar(currentPage){
+    var el = document.getElementById('sidebar');
+    if (!el) return;
 
-    var links = [
-        { p:'dashboard.html',    i:'bi-speedometer2',   l:'Dashboard'   },
-        { p:'reservations.html', i:'bi-calendar-check', l:'Reservations'},
-        { p:'rooms.html',        i:'bi-door-open',       l:'Rooms'       },
-        { p:'guests.html',       i:'bi-people',          l:'Guests'      },
-        { p:'billing.html',      i:'bi-receipt',         l:'Billing'     },
-        { p:'reports.html',      i:'bi-bar-chart-line',  l:'Reports'     },
-        { p:'staff.html',        i:'bi-person-badge',    l:'Staff',
-            admin:true }
+    var role  = Auth.role();
+    var isAdm = Auth.isAdmin();
+
+    // Main nav items
+    var navItems = [
+        { href:'dashboard.html',    icon:'bi-speedometer2',   label:'Dashboard' },
+        { href:'reservations.html', icon:'bi-calendar-check', label:'Reservations' },
+        { href:'guests.html',       icon:'bi-people',         label:'Guests' },
+        { href:'rooms.html',        icon:'bi-door-open',      label:'Rooms' },
+        { href:'billing.html',      icon:'bi-receipt',        label:'Billing' },
+        { href:'reports.html',      icon:'bi-bar-chart-line', label:'Reports' },
+        { href:'staff.html',        icon:'bi-person-badge',   label:'Staff', adminOnly:true }
     ];
 
-    var nav = links
-        .filter(function(x){ return !x.admin || role==='admin'; })
-        .map(function(x){
-            var act = active === x.p ? 'active' : '';
-            return '<a href="' + x.p + '" class="nav-link ' + act + '">' +
-                '<i class="bi ' + x.i + '"></i> ' + x.l +
-                '</a>';
+    // Quick action items (same destinations, shorter labels, action-oriented)
+    var quickItems = [
+        { href:'reservations.html', icon:'bi-plus-circle',    label:'New Reservation' },
+        { href:'guests.html',       icon:'bi-person-plus',    label:'Add Guest' },
+        { href:'rooms.html',        icon:'bi-search',         label:'Check Availability' },
+        { href:'billing.html',      icon:'bi-lightning',      label:'Generate Bill' },
+        { href:'reports.html',      icon:'bi-file-earmark-bar-graph', label:'View Reports' },
+        { href:'staff.html',        icon:'bi-person-gear',    label:'Manage Staff', adminOnly:true }
+    ];
+
+    var navHtml = navItems
+        .filter(function(n){ return !n.adminOnly || isAdm; })
+        .map(function(n){
+            var active = currentPage === n.href ? 'active' : '';
+            return '<a href="' + n.href + '" class="nav-link ' + active + '">' +
+                '<i class="bi ' + n.icon + '"></i>' + n.label + '</a>';
         }).join('');
 
-    return (
-        '<div style="padding:1.25rem 1rem;border-bottom:1px solid' +
-        ' rgba(255,255,255,.1);text-align:center">' +
-        '<div style="width:52px;height:52px;background:#e8a020;' +
-        'border-radius:50%;display:flex;align-items:center;' +
-        'justify-content:center;margin:0 auto .5rem;' +
-        'font-size:1.5rem;color:#fff">' +
-        '<i class="bi bi-building"></i></div>' +
-        '<div style="color:#fff;font-weight:700;font-size:.9rem">' +
-        'Hotel System</div>' +
-        '<small style="color:rgba(255,255,255,.5);font-size:.72rem">' +
-        'Management System</small>' +
+    var quickHtml = quickItems
+        .filter(function(n){ return !n.adminOnly || isAdm; })
+        .map(function(n){
+            return '<a href="' + n.href + '" class="nav-link" ' +
+                'style="padding:.45rem 1rem .45rem 1.5rem;font-size:.8rem;color:rgba(255,255,255,.6)">' +
+                '<i class="bi ' + n.icon + '" style="font-size:.85rem"></i>' + n.label + '</a>';
+        }).join('');
+
+    el.innerHTML =
+        // Brand
+        '<div style="padding:1.25rem 1rem;border-bottom:1px solid rgba(255,255,255,.1)">' +
+        '<div style="display:flex;align-items:center;gap:.6rem">' +
+        '<div style="width:36px;height:36px;background:rgba(255,255,255,.18);' +
+        'border-radius:10px;display:flex;align-items:center;' +
+        'justify-content:center;font-size:1.1rem">' +
+        '<i class="bi bi-building" style="color:#fff"></i>' +
         '</div>' +
-        '<div style="padding:.4rem .75rem;font-size:.68rem;font-weight:700;' +
-        'color:rgba(255,255,255,.35);text-transform:uppercase;' +
-        'letter-spacing:1px;margin-top:.4rem">Navigation</div>' +
-        '<nav class="nav flex-column px-2">' + nav + '</nav>' +
-        '<div style="margin-top:auto;padding:1rem;border-top:1px solid' +
-        ' rgba(255,255,255,.1)">' +
-        '<div style="display:flex;align-items:center;gap:.65rem;' +
-        'margin-bottom:.65rem">' +
-        '<div style="width:36px;height:36px;background:#e8a020;' +
-        'border-radius:50%;display:flex;align-items:center;' +
-        'justify-content:center;font-weight:700;color:#fff;' +
-        'font-size:.82rem;flex-shrink:0">' + initials + '</div>' +
         '<div>' +
-        '<div style="color:#fff;font-weight:600;font-size:.85rem">' +
-        name + '</div>' +
-        '<div style="color:rgba(255,255,255,.5);font-size:.72rem">' +
-        role + '</div>' +
+        '<div style="color:#fff;font-weight:700;font-size:.9rem;line-height:1.2">Hotel System</div>' +
+        '<div style="color:rgba(255,255,255,.5);font-size:.7rem">' + role + '</div>' +
         '</div>' +
         '</div>' +
-        '<button type="button" onclick="Auth.logout()" ' +
-        'class="btn btn-sm btn-outline-light w-100">' +
-        '<i class="bi bi-box-arrow-right me-1"></i>Logout</button>' +
-        '</div>'
-    );
+        '</div>' +
+
+        // Main nav
+        '<div style="flex:1;overflow-y:auto;padding:.5rem 0">' +
+        '<div style="padding:.5rem 1rem .25rem;font-size:.65rem;' +
+        'text-transform:uppercase;letter-spacing:.8px;' +
+        'color:rgba(255,255,255,.35);font-weight:700">Navigation</div>' +
+        navHtml +
+
+        // ── QUICK ACTIONS ──────────────────────────────────────
+        '<div style="margin:.75rem 0 .25rem;padding:.5rem 1rem .25rem;' +
+        'font-size:.65rem;text-transform:uppercase;letter-spacing:.8px;' +
+        'color:rgba(255,255,255,.35);font-weight:700;' +
+        'border-top:1px solid rgba(255,255,255,.08);padding-top:.75rem">' +
+        '<i class="bi bi-lightning-fill" style="margin-right:.3rem"></i>Quick Actions</div>' +
+        quickHtml +
+        // ──────────────────────────────────────────────────────
+        '</div>' +
+
+        // Logout at bottom
+        '<div style="padding:.75rem;border-top:1px solid rgba(255,255,255,.1)">' +
+        '<div style="padding:.4rem 1rem;font-size:.75rem;' +
+        'color:rgba(255,255,255,.4);margin-bottom:.4rem">' +
+        '<i class="bi bi-person-circle me-1"></i>' + Auth.name() +
+        '</div>' +
+        '<button onclick="logout()" style="width:100%;padding:.6rem;' +
+        'background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);' +
+        'color:rgba(255,255,255,.8);border-radius:8px;' +
+        'font-size:.82rem;cursor:pointer;transition:all .2s;' +
+        'display:flex;align-items:center;justify-content:center;gap:.4rem"' +
+        ' onmouseover="this.style.background=\'rgba(255,255,255,.18)\'"' +
+        ' onmouseout="this.style.background=\'rgba(255,255,255,.08)\'">' +
+        '<i class="bi bi-box-arrow-left"></i>Logout' +
+        '</button>' +
+        '</div>';
 }
 
-// ── Init page ─────────────────────────────────────
-function initPage(active){
-    if (!Auth.requireAuth()) return;
-    var sb = document.getElementById('sidebar');
-    if (sb) sb.innerHTML = buildSidebar(active);
-    var tu = document.getElementById('topbarUser');
-    if (tu) tu.textContent = Auth.name() || '';
-    var tr = document.getElementById('topbarRole');
-    if (tr) tr.textContent = Auth.role() || '';
-    if (Auth.role() !== 'admin'){
-        document.querySelectorAll('.admin-only')
-            .forEach(function(e){ e.style.display='none'; });
-    }
+async function logout(){
+    try { await API.post('api/auth/logout', {}); } catch(e){}
+    Auth.clear();
+    window.location.href = 'index.html';
 }

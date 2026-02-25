@@ -1,0 +1,1322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Billing — Hotel System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary:#1a3c5e; --primary-lt:#2e6da4;
+            --accent:#e8a020; --gold:#c9922a; --sidebar:250px;
+        }
+        *{box-sizing:border-box;}
+        body{background:#f0f4f8;font-family:'DM Sans',sans-serif;margin:0;padding:0;}
+
+        .sidebar{position:fixed;top:0;left:0;width:var(--sidebar);height:100vh;background:var(--primary);z-index:1000;overflow-y:auto;display:flex;flex-direction:column;}
+        .sidebar .nav-link{color:rgba(255,255,255,.72);padding:.65rem 1rem;display:flex;align-items:center;gap:.75rem;font-size:.9rem;border-left:3px solid transparent;transition:all .2s;text-decoration:none;}
+        .sidebar .nav-link:hover,.sidebar .nav-link.active{background:rgba(255,255,255,.12);color:#fff;border-left-color:var(--accent);}
+
+        .main-content{margin-left:var(--sidebar);min-height:100vh;display:flex;flex-direction:column;}
+        .topbar{background:#fff;padding:.875rem 1.5rem;border-bottom:1px solid #e0e0e0;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:999;flex-shrink:0;}
+        .content-area{padding:1.5rem;flex:1;}
+
+        /* ── Stat boxes ── */
+        .stat-box{background:#fff;border-radius:14px;padding:1.25rem;height:100%;box-shadow:0 2px 10px rgba(0,0,0,.06);display:flex;align-items:center;gap:1rem;border-left:4px solid transparent;transition:all .2s;}
+        .stat-box:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.1);}
+        .stat-box.blue{border-left-color:#1565c0;} .stat-box.green{border-left-color:#1a7a4a;}
+        .stat-box.orange{border-left-color:#e65100;} .stat-box.gold{border-left-color:var(--gold);}
+        .stat-ic{width:50px;height:50px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;}
+
+        /* ── Card box ── */
+        .card-box{background:#fff;border-radius:14px;padding:1.5rem;box-shadow:0 2px 10px rgba(0,0,0,.06);}
+        .card-box-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;padding-bottom:.875rem;border-bottom:2px solid #f0f4f8;}
+        .card-box-header h6{margin:0;font-weight:700;color:var(--primary);font-size:1rem;font-family:'Playfair Display',serif;}
+
+        /* ── Search panel ── */
+        .search-panel{background:linear-gradient(135deg,#1a3c5e 0%,#2e6da4 100%);border-radius:16px;padding:2rem;color:#fff;margin-bottom:1.5rem;position:relative;overflow:hidden;}
+        .search-panel::before{content:'';position:absolute;top:-40px;right:-40px;width:180px;height:180px;background:rgba(255,255,255,.06);border-radius:50%;}
+        .search-panel::after{content:'';position:absolute;bottom:-60px;right:80px;width:120px;height:120px;background:rgba(255,255,255,.04);border-radius:50%;}
+        .search-panel h5{font-family:'Playfair Display',serif;font-weight:700;margin-bottom:.35rem;}
+        .search-panel .form-control{background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.3);color:#fff;border-radius:10px;padding:.75rem 1rem;font-size:1rem;transition:all .2s;}
+        .search-panel .form-control::placeholder{color:rgba(255,255,255,.55);}
+        .search-panel .form-control:focus{background:rgba(255,255,255,.22);border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,160,32,.25);color:#fff;outline:none;}
+
+        /* ── Receipt ── */
+        .bill-receipt{background:#fff;border-radius:16px;box-shadow:0 8px 40px rgba(0,0,0,.12);overflow:hidden;}
+        .receipt-header{background:linear-gradient(135deg,#1a3c5e,#2e6da4);padding:2rem;color:#fff;position:relative;}
+        .receipt-header::after{content:'';position:absolute;bottom:-16px;left:0;right:0;height:32px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 32'%3E%3Cpath d='M0 32 Q150 0 300 16 Q450 32 600 16 Q750 0 900 16 Q1050 32 1200 16 L1200 32Z' fill='white'/%3E%3C/svg%3E") no-repeat center bottom;background-size:cover;z-index:1;}
+        .hotel-logo-receipt{width:56px;height:56px;background:rgba(255,255,255,.2);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;margin-bottom:1rem;backdrop-filter:blur(10px);}
+        .receipt-body{padding:2rem;}
+        .receipt-divider{border:none;border-top:2px dashed #e0e8f0;margin:1.25rem 0;}
+        .receipt-row{display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;font-size:.9rem;}
+        .receipt-row .lbl{color:#6b7280;}
+        .receipt-row .val{font-weight:600;color:#1a3c5e;}
+        .receipt-total{background:linear-gradient(135deg,#f0f7ff,#e8f0fe);border-radius:12px;padding:1.25rem;margin-top:1rem;border:2px solid #d0e4ff;}
+        .receipt-total .total-lbl{font-size:.85rem;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;}
+        .receipt-total .total-amt{font-family:'Playfair Display',serif;font-size:2.2rem;font-weight:700;color:var(--primary);line-height:1;}
+        .receipt-total .nights-info{font-size:.8rem;color:#6b7280;margin-top:.25rem;}
+
+        /* ── Discount highlight ── */
+        .discount-box{background:linear-gradient(135deg,#f0fff4,#dcfce7);border:2px solid #86efac;border-radius:10px;padding:.75rem 1rem;margin:.5rem 0;display:flex;justify-content:space-between;align-items:center;}
+        .discount-box .disc-label{color:#166534;font-weight:700;font-size:.88rem;}
+        .discount-box .disc-amt{color:#15803d;font-weight:800;font-size:1.05rem;}
+
+        /* ── Info grid ── */
+        .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.25rem;}
+        .info-group{padding:.875rem;background:#f8fafc;border-radius:10px;border:1px solid #e8edf5;}
+        .info-group .ig-label{font-size:.7rem;text-transform:uppercase;letter-spacing:.8px;color:#9ca3af;font-weight:700;margin-bottom:.5rem;}
+        .info-row{display:flex;justify-content:space-between;align-items:center;padding:.2rem 0;font-size:.85rem;}
+        .info-row .ir-key{color:#6b7280;} .info-row .ir-val{font-weight:600;color:#1a3c5e;}
+
+        /* ── Payment method ── */
+        .pay-method{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.75rem;}
+        .pay-opt{flex:1;min-width:80px;padding:.65rem .5rem;border-radius:10px;border:2px solid #e0e8f0;text-align:center;cursor:pointer;transition:all .2s;font-size:.8rem;font-weight:600;color:#555;}
+        .pay-opt:hover{border-color:var(--primary-lt);background:#f0f7ff;color:var(--primary);}
+        .pay-opt.selected{border-color:var(--primary);background:linear-gradient(135deg,#e8f0fe,#d0e4ff);color:var(--primary);}
+        .pay-opt i{display:block;font-size:1.3rem;margin-bottom:.25rem;}
+
+        /* ── Table ── */
+        .table thead th{background:#f8fafc;color:#555;font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.6px;border-bottom:2px solid #e0e8f0;white-space:nowrap;}
+        .table tbody td{vertical-align:middle;font-size:.875rem;border-color:#f4f8ff;}
+        .table tbody tr:hover{background:#f8faff;}
+
+        /* ── Modals ── */
+        .modal-header{background:var(--primary);color:#fff;border-radius:14px 14px 0 0;}
+        .modal-header .btn-close{filter:invert(1);}
+        .modal-content{border-radius:14px;border:none;box-shadow:0 20px 60px rgba(0,0,0,.2);}
+
+        /* ── Buttons ── */
+        .btn-hotel{background:linear-gradient(135deg,#1a3c5e,#2e6da4);color:#fff;border:none;border-radius:10px;font-weight:600;transition:all .2s;letter-spacing:.3px;}
+        .btn-hotel:hover{background:linear-gradient(135deg,#152f4a,#245a8a);color:#fff;transform:translateY(-1px);box-shadow:0 4px 12px rgba(26,60,94,.3);}
+        .btn-hotel:disabled{opacity:.6;transform:none;}
+        .btn-gold{background:linear-gradient(135deg,#c9922a,#e8a020);color:#fff;border:none;border-radius:10px;font-weight:600;transition:all .2s;}
+        .btn-gold:hover{background:linear-gradient(135deg,#b8821f,#d4911c);color:#fff;transform:translateY(-1px);}
+        .form-control:focus,.form-select:focus{border-color:#2e6da4;box-shadow:0 0 0 3px rgba(46,109,164,.15);}
+
+        /* ── Adjustments ── */
+        .adj-summary{background:#f0f7ff;border:2px solid #d0e4ff;border-radius:12px;padding:1rem;}
+        .adj-row{display:flex;justify-content:space-between;align-items:center;padding:.3rem 0;font-size:.875rem;}
+        .adj-row.total-row{border-top:2px dashed #b0ccee;margin-top:.5rem;padding-top:.75rem;}
+        .adj-row.total-row .adj-lbl{font-weight:700;font-size:1rem;color:var(--primary);}
+        .adj-row.total-row .adj-val{font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700;color:var(--primary);}
+        .saved-chip{display:inline-flex;align-items:center;gap:.3rem;background:#dcfce7;color:#166534;border-radius:20px;padding:.25rem .75rem;font-size:.78rem;font-weight:600;}
+
+        @keyframes slideUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+        .slide-up{animation:slideUp .4s ease forwards;}
+        @media print{.sidebar,.topbar,.no-print{display:none!important;}.main-content{margin-left:0!important;}}
+        @media(max-width:768px){.sidebar{transform:translateX(-100%);}.main-content{margin-left:0;}.info-grid{grid-template-columns:1fr;}}
+    </style>
+</head>
+<body>
+
+<div class="sidebar" id="sidebar"></div>
+
+<div class="main-content">
+
+    <!-- Topbar -->
+    <div class="topbar">
+        <div class="d-flex align-items-center gap-3">
+            <a href="dashboard.html" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Dashboard
+            </a>
+            <h5 class="mb-0" style="color:var(--primary);font-weight:700;font-family:'Playfair Display',serif">
+                <i class="bi bi-receipt me-2"></i>Billing
+            </h5>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+      <span class="text-muted" style="font-size:.85rem">
+        <i class="bi bi-person-circle me-1"></i>
+        <span id="topbarUser"></span>
+      </span>
+            <span class="badge bg-secondary" id="topbarRole"></span>
+        </div>
+    </div>
+
+    <div class="content-area">
+
+        <!-- Stats -->
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-xl-3">
+                <div class="stat-box blue">
+                    <div class="stat-ic" style="background:#e3f2fd;color:#1565c0"><i class="bi bi-receipt"></i></div>
+                    <div><div class="fs-4 fw-bold" id="st-total">—</div><div class="text-muted" style="font-size:.78rem">Total Bills</div></div>
+                </div>
+            </div>
+            <div class="col-6 col-xl-3">
+                <div class="stat-box green">
+                    <div class="stat-ic" style="background:#d1fae5;color:#065f46"><i class="bi bi-check-circle"></i></div>
+                    <div><div class="fs-4 fw-bold" id="st-paid">—</div><div class="text-muted" style="font-size:.78rem">Paid</div></div>
+                </div>
+            </div>
+            <div class="col-6 col-xl-3">
+                <div class="stat-box orange">
+                    <div class="stat-ic" style="background:#fee2e2;color:#991b1b"><i class="bi bi-clock-history"></i></div>
+                    <div><div class="fs-4 fw-bold" id="st-unpaid">—</div><div class="text-muted" style="font-size:.78rem">Unpaid</div></div>
+                </div>
+            </div>
+            <div class="col-6 col-xl-3">
+                <div class="stat-box gold">
+                    <div class="stat-ic" style="background:#fef3c7;color:#92400e"><i class="bi bi-currency-dollar"></i></div>
+                    <div><div class="fs-4 fw-bold" id="st-revenue">—</div><div class="text-muted" style="font-size:.78rem">Total Revenue</div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search Panel -->
+        <div class="search-panel mb-4">
+            <div class="row align-items-center g-3">
+                <div class="col-md-8">
+                    <h5><i class="bi bi-search me-2"></i>Generate Bill</h5>
+                    <p class="mb-3" style="opacity:.75;font-size:.88rem">
+                        Enter a reservation number to generate an itemised bill
+                    </p>
+                    <div class="d-flex gap-2">
+                        <input type="text" id="resInput" class="form-control"
+                               placeholder="Enter Reservation Number e.g. RES-001"
+                               onkeydown="if(event.key==='Enter') generateBill()">
+                        <button type="button" class="btn btn-gold px-4 flex-shrink-0" onclick="generateBill()">
+                            <span id="genText"><i class="bi bi-lightning me-1"></i>Generate</span>
+                            <span id="genSpin" class="d-none">
+                <span class="spinner-border spinner-border-sm me-1"></span>Loading…
+              </span>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-4 text-center d-none d-md-block">
+                    <i class="bi bi-file-earmark-text" style="font-size:5rem;opacity:.2"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bill Result -->
+        <div id="billResult" class="d-none mb-4 slide-up"></div>
+
+        <!-- Adjustments Panel -->
+        <div id="adjustmentsPanel" class="d-none mb-4">
+            <div class="card-box">
+                <div class="card-box-header">
+                    <h6><i class="bi bi-calculator me-2"></i>Bill Adjustments</h6>
+                    <span id="savedChip" class="saved-chip d-none">
+            <i class="bi bi-check-circle"></i> Adjustments Applied
+          </span>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-percent me-1"></i>Tax Rate (%)
+                        </label>
+                        <div class="input-group">
+                            <input type="number" id="taxRate" class="form-control"
+                                   value="10" min="0" max="100" step="0.01" oninput="recalculateBill()">
+                            <span class="input-group-text">%</span>
+                        </div>
+                        <small class="text-muted">Standard: 10%</small>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-currency-dollar me-1"></i>Additional Fees ($)
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" id="additionalTax" class="form-control"
+                                   value="0" min="0" step="0.01" oninput="recalculateBill()">
+                        </div>
+                        <small class="text-muted">Extra charges</small>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-tag me-1"></i>Discount Amount ($)
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" id="discountAmount" class="form-control"
+                                   value="0" min="0" step="0.01" oninput="recalculateBill()">
+                        </div>
+                        <small class="text-muted">Promotional discount</small>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-pencil me-1"></i>Discount Reason
+                        </label>
+                        <input type="text" id="discountReason" class="form-control"
+                               placeholder="e.g., Loyalty program, Special offer">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-card-text me-1"></i>Additional Notes
+                        </label>
+                        <input type="text" id="billNotes" class="form-control"
+                               placeholder="e.g., Service charges included">
+                    </div>
+                </div>
+
+                <!-- Live summary -->
+                <div class="adj-summary mt-3">
+                    <div class="adj-row">
+                        <span class="text-muted">Subtotal (Room Charges)</span>
+                        <span class="fw-semibold" id="calc_subtotal">$0.00</span>
+                    </div>
+                    <div class="adj-row" id="calc_disc_row" style="display:none!important">
+            <span style="color:#166534;font-weight:600">
+              <i class="bi bi-tag-fill me-1"></i>Discount
+              (<span id="calc_disc_reason">—</span>)
+            </span>
+                        <span style="color:#15803d;font-weight:700">
+              − <span id="calc_discount_val">$0.00</span>
+            </span>
+                    </div>
+                    <div class="adj-row" id="calc_after_disc_row" style="display:none!important">
+                        <span class="text-muted">After Discount</span>
+                        <span class="fw-semibold" id="calc_after_disc">$0.00</span>
+                    </div>
+                    <div class="adj-row">
+            <span class="text-muted">
+              Tax (<span id="calc_tax_pct">10</span>%)
+            </span>
+                        <span style="color:#1565c0;font-weight:600" id="calc_tax">$0.00</span>
+                    </div>
+                    <div class="adj-row" id="calc_addtax_row" style="display:none!important">
+                        <span class="text-muted">Additional Fees</span>
+                        <span class="fw-semibold" id="calc_addtax_val">$0.00</span>
+                    </div>
+                    <div class="adj-row total-row">
+                        <span class="adj-lbl">Total Amount Due</span>
+                        <span class="adj-val" id="calc_total">$0.00</span>
+                    </div>
+                </div>
+
+                <div class="mt-3 d-flex gap-2">
+                    <button type="button" class="btn btn-hotel px-4" onclick="applyAdjustments()">
+                        <i class="bi bi-check-circle me-1"></i>Apply & Save Adjustments
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="resetAdjustments()">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- All Bills -->
+        <div class="card-box">
+            <div class="card-box-header">
+                <h6><i class="bi bi-list-ul me-2"></i>All Bills</h6>
+                <div class="d-flex gap-2">
+                    <select id="payFilter" class="form-select form-select-sm"
+                            onchange="doFilter()" style="width:150px">
+                        <option value="">All Status</option>
+                        <option value="PAID">Paid</option>
+                        <option value="UNPAID">Unpaid</option>
+                        <option value="PARTIAL">Partial</option>
+                    </select>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="loadBills()">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="row g-2 mb-3">
+                <div class="col-md-5">
+                    <div class="input-group input-group-sm">
+            <span class="input-group-text bg-white">
+              <i class="bi bi-search text-muted"></i>
+            </span>
+                        <input type="text" id="searchInput" class="form-control"
+                               placeholder="Search bill number, guest…" oninput="doFilter()">
+                    </div>
+                </div>
+            </div>
+            <div id="billsWrap">
+                <div class="text-center py-5 text-muted">
+                    <div class="spinner-border text-primary mb-2"></div>
+                    <p class="mb-0">Loading bills…</p>
+                </div>
+            </div>
+            <div class="mt-2" style="font-size:.8rem;color:#999">
+                <span id="tblInfo"></span>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ══════════ PAYMENT MODAL ══════════ -->
+<div class="modal fade" id="payModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-credit-card me-2"></i>Process Payment
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="p-3 rounded-3 mb-3" style="background:#f8fafc;border:1px solid #e8edf5">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Bill Number</span>
+                        <span class="fw-bold" id="pay_billno">—</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1" id="pay_disc_row" style="display:none!important">
+            <span style="color:#166534;font-weight:600">
+              <i class="bi bi-tag-fill me-1"></i>Discount Applied
+            </span>
+                        <span style="color:#15803d;font-weight:700" id="pay_disc_display">—</span>
+                    </div>
+                    <div class="d-flex justify-content-between" style="border-top:1px solid #e8edf5;padding-top:.5rem;margin-top:.25rem">
+                        <span class="fw-bold" style="color:#1a3c5e">Amount Due</span>
+                        <span class="fw-bold fs-5" style="color:#1a7a4a" id="pay_total">—</span>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Payment Method</label>
+                    <div class="pay-method" id="payMethodGroup">
+                        <div class="pay-opt selected" onclick="selMethod(this,'CASH')">
+                            <i class="bi bi-cash-stack"></i>Cash
+                        </div>
+                        <div class="pay-opt" onclick="selMethod(this,'CARD')">
+                            <i class="bi bi-credit-card"></i>Card
+                        </div>
+                        <div class="pay-opt" onclick="selMethod(this,'BANK_TRANSFER')">
+                            <i class="bi bi-bank"></i>Bank
+                        </div>
+                        <div class="pay-opt" onclick="selMethod(this,'ONLINE')">
+                            <i class="bi bi-phone"></i>Online
+                        </div>
+                    </div>
+                    <input type="hidden" id="pay_method" value="CASH">
+                    <input type="hidden" id="pay_final_total" value="0">
+                </div>
+                <div class="mb-2">
+                    <label class="form-label fw-semibold">
+                        Amount to Pay <span class="text-danger">*</span>
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text fw-bold">$</span>
+                        <input type="number" id="pay_amount" class="form-control"
+                               placeholder="0.00" step="0.01" min="0.01">
+                    </div>
+                    <div class="invalid-feedback">Enter a valid amount.</div>
+                    <small class="text-muted" id="pay_hint"></small>
+                </div>
+                <div id="payErr" class="alert alert-danger d-none mt-3 py-2" style="font-size:.85rem"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" id="btnPay" class="btn btn-hotel px-4" onclick="submitPayment()">
+          <span id="btnPayText">
+            <i class="bi bi-check-circle me-1"></i>Confirm Payment
+          </span>
+                    <span id="btnPaySpin" class="d-none">
+            <span class="spinner-border spinner-border-sm me-1"></span>Processing…
+          </span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════ VIEW BILL MODAL ══════════ -->
+<div class="modal fade" id="viewModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-eye me-2"></i>Bill Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="viewBody">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-hotel no-print" onclick="printBill()">
+                    <i class="bi bi-printer me-1"></i>Print Bill
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/app.js"></script>
+<script>
+    'use strict';
+
+    // ── Global state ──────────────────────────────────────────────
+    var allBills      = [];
+    var actBillId     = 0;
+    var actBillNo     = '';
+    var actFinalTotal = 0;
+    var genBill       = null;   // Bill object after generate (with full data)
+    var baseSubtotal  = 0;      // Raw room charges — never changes after generate
+
+    function getModal(id){
+        return bootstrap.Modal.getOrCreateInstance(document.getElementById(id));
+    }
+
+    document.addEventListener('DOMContentLoaded', function(){
+        initPage('billing.html');
+        loadBills();
+    });
+
+    // ══════════════════════════════════════════════
+    //  LOAD ALL BILLS
+    // ══════════════════════════════════════════════
+    async function loadBills(){
+        document.getElementById('billsWrap').innerHTML =
+            '<div class="text-center py-5 text-muted">' +
+            '<div class="spinner-border text-primary mb-2"></div>' +
+            '<p class="mb-0">Loading bills…</p></div>';
+        try {
+            var data = await API.get('api/bills');
+            if (data === null) return;
+            allBills = Array.isArray(data) ? data : [];
+
+            // Restore locally-saved adjustments so discount shows in list
+            allBills = allBills.map(function(b){
+                try {
+                    var stored = sessionStorage.getItem('bill_adj_' + b.billId);
+                    if (stored){
+                        var adj = JSON.parse(stored);
+                        if (adj.totalAmount !== b.totalAmount){
+                            return Object.assign({}, b, adj);
+                        }
+                    }
+                } catch(e){}
+                return b;
+            });
+
+            updateStats(allBills);
+            renderBills(allBills);
+        } catch(err){
+            document.getElementById('billsWrap').innerHTML =
+                '<div class="text-center py-5 text-danger">' +
+                '<i class="bi bi-exclamation-triangle" style="font-size:2.5rem"></i>' +
+                '<p class="mt-2 fw-semibold">Failed to load bills</p>' +
+                '<p class="text-muted" style="font-size:.85rem">' + err.message + '</p>' +
+                '<button type="button" class="btn btn-outline-primary btn-sm mt-1" onclick="loadBills()">' +
+                '<i class="bi bi-arrow-clockwise me-1"></i>Retry</button></div>';
+        }
+    }
+
+    // ── Stats ─────────────────────────────────────────────────────
+    function updateStats(bills){
+        var paid    = bills.filter(function(b){ return b.paymentStatus==='PAID'; }).length;
+        var unpaid  = bills.filter(function(b){ return b.paymentStatus==='UNPAID'||!b.paymentStatus; }).length;
+        var revenue = bills.filter(function(b){ return b.paymentStatus==='PAID'; })
+            .reduce(function(s,b){ return s+(parseFloat(b.totalAmount)||0); },0);
+        document.getElementById('st-total').textContent   = bills.length;
+        document.getElementById('st-paid').textContent    = paid;
+        document.getElementById('st-unpaid').textContent  = unpaid;
+        document.getElementById('st-revenue').textContent = fmtMoney(revenue);
+    }
+
+    // ── Render Bills Table ────────────────────────────────────────
+    function renderBills(list){
+        if (!list.length){
+            document.getElementById('billsWrap').innerHTML =
+                '<div class="text-center py-5 text-muted">' +
+                '<i class="bi bi-receipt-cutoff" style="font-size:3rem;opacity:.25"></i>' +
+                '<p class="mt-2 mb-0">No bills found</p></div>';
+            document.getElementById('tblInfo').textContent = '';
+            return;
+        }
+        var rows = list.map(function(b){
+            var canPay = b.paymentStatus !== 'PAID';
+            // Pass all components so openPayFromList can compute correctly
+            return '<tr>' +
+                '<td><span class="fw-bold" style="color:var(--primary)">' + (b.billNumber||'—') + '</span></td>' +
+                '<td><code style="font-size:.78rem">' + (b.reservationNumber||'—') + '</code></td>' +
+                '<td>' + (b.guestName||'—') + '</td>' +
+                '<td class="fw-bold">' + fmtMoney(b.totalAmount) + '</td>' +
+                '<td>' + payBadge(b.paymentStatus) + '</td>' +
+                '<td><div class="d-flex gap-1">' +
+                '<button type="button" class="btn btn-sm btn-outline-primary" title="View" onclick="viewBill(' + b.billId + ')">' +
+                '<i class="bi bi-eye"></i></button>' +
+                (canPay
+                    ? '<button type="button" class="btn btn-sm btn-hotel" title="Pay" onclick="openPayFromList(' +
+                    b.billId + ',\'' + escQ(b.billNumber||'') + '\',' +
+                    (b.subtotal||0) + ',' + (b.discountAmount||0) + ',' +
+                    (b.taxAmount||0) + ',' + (b.additionalTax||0) + ')">' +
+                    '<i class="bi bi-credit-card"></i></button>'
+                    : '<button type="button" class="btn btn-sm btn-outline-success" disabled title="Paid">' +
+                    '<i class="bi bi-check-circle"></i></button>') +
+                '</div></td>' +
+                '</tr>';
+        }).join('');
+        document.getElementById('billsWrap').innerHTML =
+            '<div class="table-responsive">' +
+            '<table class="table table-hover mb-0"><thead><tr>' +
+            '<th>Bill No</th><th>Reservation</th><th>Guest</th>' +
+            '<th>Total</th><th>Status</th><th style="width:110px">Actions</th>' +
+            '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+        document.getElementById('tblInfo').textContent =
+            'Showing ' + list.length + ' of ' + allBills.length + ' bills';
+    }
+
+    // ── Filter ────────────────────────────────────────────────────
+    function doFilter(){
+        var q  = document.getElementById('searchInput').value.toLowerCase();
+        var ps = document.getElementById('payFilter').value;
+        var f  = allBills.filter(function(b){
+            var mq = !q ||
+                (b.billNumber       ||'').toLowerCase().includes(q)||
+                (b.reservationNumber||'').toLowerCase().includes(q)||
+                (b.guestName        ||'').toLowerCase().includes(q);
+            return mq && (!ps || b.paymentStatus===ps);
+        });
+        renderBills(f);
+    }
+
+    // ══════════════════════════════════════════════
+    //  GENERATE BILL
+    // ══════════════════════════════════════════════
+    async function generateBill(){
+        var resNo = document.getElementById('resInput').value.trim();
+        if (!resNo){ Toast.show('Enter a reservation number','warning'); return; }
+
+        setGenLoad(true);
+        document.getElementById('billResult').classList.add('d-none');
+        document.getElementById('adjustmentsPanel').classList.add('d-none');
+        document.getElementById('savedChip').classList.add('d-none');
+        genBill = null;
+
+        try {
+            var bill = await API.post('api/bills/generate', { reservationNumber: resNo });
+            if (!bill) return;
+
+            // Enrich with reservation data if guest/room fields are missing
+            try {
+                var allRes = await API.get('api/reservations');
+                if (Array.isArray(allRes)){
+                    var resData = allRes.find(function(r){
+                        return r.reservationNumber === resNo ||
+                            r.reservationNumber === bill.reservationNumber;
+                    });
+                    if (resData){
+                        bill.guestName    = bill.guestName    || resData.guestName    || resData.guest_name  || '—';
+                        bill.guestContact = bill.guestContact || resData.contactNumber|| resData.contact     || '—';
+                        bill.roomNumber   = bill.roomNumber   || resData.roomNumber   || resData.room_number || '—';
+                        bill.roomType     = bill.roomType     || resData.typeName     || resData.roomType    || '—';
+                        bill.checkinDate  = bill.checkinDate  || resData.checkinDate  || resData.checkInDate || null;
+                        bill.checkoutDate = bill.checkoutDate || resData.checkoutDate || resData.checkOutDate|| null;
+                        bill.reservationNumber = bill.reservationNumber || resData.reservationNumber || resNo;
+                        if (!bill.nights || bill.nights === 0){
+                            bill.nights = calcNights(bill.checkinDate, bill.checkoutDate);
+                        }
+                        if ((!bill.ratePerNight || bill.ratePerNight === 0) && bill.nights > 0){
+                            bill.ratePerNight = parseFloat(bill.subtotal||0) / bill.nights;
+                        }
+                    }
+                }
+            } catch(e){ /* use whatever bill has */ }
+
+            genBill      = bill;
+            baseSubtotal = parseFloat(bill.subtotal || 0);
+
+            // Init adjustment fields from server data
+            var taxRate = bill.taxRate ? parseFloat(bill.taxRate) : 10;
+            document.getElementById('taxRate').value        = taxRate;
+            document.getElementById('additionalTax').value  = parseFloat(bill.additionalTax  || 0).toFixed(2);
+            document.getElementById('discountAmount').value = parseFloat(bill.discountAmount || 0).toFixed(2);
+            document.getElementById('discountReason').value = bill.discountReason || '';
+            document.getElementById('billNotes').value      = bill.notes || '';
+
+            document.getElementById('adjustmentsPanel').classList.remove('d-none');
+            recalculateBill();
+            showBillReceipt(genBill);
+            loadBills();
+
+        } catch(err){
+            document.getElementById('billResult').innerHTML =
+                '<div class="alert alert-danger">' +
+                '<i class="bi bi-exclamation-triangle me-2"></i>' +
+                '<strong>Error:</strong> ' + err.message + '</div>';
+            document.getElementById('billResult').classList.remove('d-none');
+        } finally {
+            setGenLoad(false);
+        }
+    }
+
+    // ══════════════════════════════════════════════
+    //  RECALCULATE (live preview — no API)
+    // ══════════════════════════════════════════════
+    function recalculateBill(){
+        if (!genBill || baseSubtotal === 0) return;
+
+        var taxRate    = parseFloat(document.getElementById('taxRate').value)        || 0;
+        var addTax     = parseFloat(document.getElementById('additionalTax').value)  || 0;
+        var discount   = parseFloat(document.getElementById('discountAmount').value) || 0;
+        var discReason = document.getElementById('discountReason').value.trim();
+        var sub        = baseSubtotal;
+        var afterDisc  = Math.max(0, sub - discount);
+        var taxAmt     = parseFloat(((afterDisc * taxRate) / 100).toFixed(2));
+        var total      = parseFloat((afterDisc + taxAmt + addTax).toFixed(2));
+
+        document.getElementById('calc_subtotal').textContent = fmtMoney(sub);
+        document.getElementById('calc_tax_pct').textContent  = taxRate;
+        document.getElementById('calc_tax').textContent      = fmtMoney(taxAmt);
+        document.getElementById('calc_total').textContent    = fmtMoney(total);
+
+        var hasDisc = discount > 0;
+        document.getElementById('calc_disc_row').style.display       = hasDisc ? 'flex' : 'none';
+        document.getElementById('calc_after_disc_row').style.display = hasDisc ? 'flex' : 'none';
+        document.getElementById('calc_discount_val').textContent     = fmtMoney(discount);
+        document.getElementById('calc_after_disc').textContent       = fmtMoney(afterDisc);
+        document.getElementById('calc_disc_reason').textContent      = discReason || 'Discount';
+        document.getElementById('calc_addtax_row').style.display     = addTax > 0 ? 'flex' : 'none';
+        document.getElementById('calc_addtax_val').textContent       = fmtMoney(addTax);
+    }
+
+    // ══════════════════════════════════════════════
+    //  APPLY ADJUSTMENTS
+    //  Updates genBill locally + saves to sessionStorage
+    //  Then calls showBillReceipt so the Pay button uses correct total
+    // ══════════════════════════════════════════════
+    async function applyAdjustments(){
+        if (!genBill){ Toast.show('Generate a bill first','warning'); return; }
+
+        var taxRate    = parseFloat(document.getElementById('taxRate').value)        || 0;
+        var addTax     = parseFloat(document.getElementById('additionalTax').value)  || 0;
+        var discount   = parseFloat(document.getElementById('discountAmount').value) || 0;
+        var discReason = document.getElementById('discountReason').value.trim();
+        var notes      = document.getElementById('billNotes').value.trim();
+        var sub        = baseSubtotal;
+        var afterDisc  = Math.max(0, sub - discount);
+        var taxAmt     = parseFloat(((afterDisc * taxRate) / 100).toFixed(2));
+        var finalTotal = parseFloat((afterDisc + taxAmt + addTax).toFixed(2));
+
+        // Update local genBill — this is what showBillReceipt & openPayFromReceipt use
+        genBill.taxRate        = taxRate;
+        genBill.additionalTax  = addTax;
+        genBill.discountAmount = discount;
+        genBill.discountReason = discReason;
+        genBill.notes          = notes;
+        genBill.taxAmount      = taxAmt;
+        genBill.totalAmount    = finalTotal;
+
+        // Update allBills cache so renderBills shows updated total
+        var idx = allBills.findIndex(function(b){ return b.billId === genBill.billId; });
+        if (idx > -1){
+            allBills[idx].discountAmount = discount;
+            allBills[idx].discountReason = discReason;
+            allBills[idx].taxAmount      = taxAmt;
+            allBills[idx].taxRate        = taxRate;
+            allBills[idx].additionalTax  = addTax;
+            allBills[idx].totalAmount    = finalTotal;
+            allBills[idx].subtotal       = sub;
+            allBills[idx].notes          = notes;
+        }
+
+        // Persist to sessionStorage so loadBills() refresh doesn't lose it
+        try {
+            sessionStorage.setItem('bill_adj_' + genBill.billId, JSON.stringify({
+                discountAmount : discount,
+                discountReason : discReason,
+                taxRate        : taxRate,
+                additionalTax  : addTax,
+                taxAmount      : taxAmt,
+                subtotal       : sub,
+                totalAmount    : finalTotal,
+                notes          : notes
+            }));
+        } catch(e){}
+
+        // Try to save to backend (silently ignore if endpoint not found)
+        var payload = {
+            billId:genBill.billId, taxRate:taxRate, additionalTax:addTax,
+            discountAmount:discount, discountReason:discReason, notes:notes,
+            subtotal:sub, taxAmount:taxAmt, totalAmount:finalTotal
+        };
+        var saved = false;
+        var eps = [
+            {m:'put',  u:'api/bills/' + genBill.billId + '/adjust'},
+            {m:'put',  u:'api/bills/' + genBill.billId},
+            {m:'post', u:'api/bills/' + genBill.billId + '/update'}
+        ];
+        for (var i = 0; i < eps.length && !saved; i++){
+            try {
+                if (eps[i].m==='put') await API.put(eps[i].u, payload);
+                else                  await API.post(eps[i].u, payload);
+                saved = true;
+            } catch(e){}
+        }
+
+        document.getElementById('savedChip').classList.remove('d-none');
+        Toast.show('✅ Adjustments applied! Total: ' + fmtMoney(finalTotal), 'success', 3000);
+
+        // Re-render receipt — the Pay button inside now carries the correct total
+        showBillReceipt(genBill);
+        renderBills(allBills);
+        updateStats(allBills);
+    }
+
+    // ── Reset Adjustments ─────────────────────────────────────────
+    function resetAdjustments(){
+        if (!genBill) return;
+        document.getElementById('taxRate').value        = '10';
+        document.getElementById('additionalTax').value  = '0';
+        document.getElementById('discountAmount').value = '0';
+        document.getElementById('discountReason').value = '';
+        document.getElementById('billNotes').value      = '';
+        document.getElementById('savedChip').classList.add('d-none');
+        recalculateBill();
+        Toast.show('Adjustments reset', 'info', 2000);
+    }
+
+    // ══════════════════════════════════════════════
+    //  SHOW BILL RECEIPT (main card below search panel)
+    // ══════════════════════════════════════════════
+    function showBillReceipt(b){
+        var nights    = b.nights    || calcNights(b.checkinDate, b.checkoutDate);
+        var sub       = parseFloat(b.subtotal       || 0);
+        var disc      = parseFloat(b.discountAmount || 0);
+        var taxAmt    = parseFloat(b.taxAmount      || 0);
+        var addTax    = parseFloat(b.additionalTax  || 0);
+        var taxRate   = b.taxRate !== undefined ? parseFloat(b.taxRate) : 10;
+        var afterDisc = Math.max(0, sub - disc);
+        var total     = parseFloat((afterDisc + taxAmt + addTax).toFixed(2));
+        var rate      = parseFloat(b.ratePerNight   || 0);
+        var canPay    = b.paymentStatus !== 'PAID';
+
+        // Guest info block
+        var guestBlock =
+            '<div class="info-group">' +
+            '<div class="ig-label">Guest Information</div>' +
+            iRow('Name',    b.guestName    || '—') +
+            iRow('Contact', b.guestContact || '—') +
+            '</div>';
+
+        // Stay details block
+        var stayBlock =
+            '<div class="info-group">' +
+            '<div class="ig-label">Stay Details</div>' +
+            iRow('Room',      'Room ' + (b.roomNumber||'—')) +
+            iRow('Type',       b.roomType    || '—') +
+            iRow('Check-in',   fmtDate(b.checkinDate)) +
+            iRow('Check-out',  fmtDate(b.checkoutDate)) +
+            iRow('Duration',   nights + ' night' + (nights!==1?'s':'')) +
+            iRow('Rate/Night', fmtMoney(rate)) +
+            '</div>';
+
+        // Discount block
+        var discBlock = '';
+        if (disc > 0){
+            discBlock =
+                '<div class="discount-box">' +
+                '<div class="disc-label">' +
+                '<i class="bi bi-tag-fill me-1"></i>Discount' +
+                (b.discountReason ? ' · ' + b.discountReason : '') +
+                '</div>' +
+                '<div class="disc-amt">− ' + fmtMoney(disc) + '</div>' +
+                '</div>' +
+                '<div class="receipt-row" style="padding:.2rem 0">' +
+                '<span class="lbl fw-semibold">After Discount</span>' +
+                '<span class="val">' + fmtMoney(afterDisc) + '</span>' +
+                '</div>';
+        }
+
+        var html =
+            '<div class="bill-receipt">' +
+            // Header
+            '<div class="receipt-header">' +
+            '<div class="hotel-logo-receipt"><i class="bi bi-building"></i></div>' +
+            '<h4 style="font-family:\'Playfair Display\',serif;margin:0 0 .25rem">Hotel Management System</h4>' +
+            '<p style="opacity:.7;margin:0;font-size:.85rem">Official Receipt & Tax Invoice</p>' +
+            '<div class="mt-3 d-flex gap-3 flex-wrap">' +
+            '<span style="font-size:.82rem;opacity:.8"><i class="bi bi-receipt me-1"></i>' + (b.billNumber||'—') + '</span>' +
+            '<span style="font-size:.82rem;opacity:.8"><i class="bi bi-calendar3 me-1"></i>' + fmtDate(new Date().toISOString()) + '</span>' +
+            '<span>' + payBadge(b.paymentStatus) + '</span>' +
+            '</div>' +
+            '</div>' +
+            // Body
+            '<div class="receipt-body">' +
+            '<div style="height:1.25rem"></div>' +
+            '<div class="info-grid">' + guestBlock + stayBlock + '</div>' +
+            '<hr class="receipt-divider">' +
+            '<div class="receipt-row"><span class="lbl">Reservation No.</span><span class="val">' + (b.reservationNumber||'—') + '</span></div>' +
+            '<div class="receipt-row"><span class="lbl">Room Type</span><span class="val">' + (b.roomType||'—') + '</span></div>' +
+            '<div class="receipt-row"><span class="lbl">Duration</span><span class="val">' + nights + ' night' + (nights!==1?'s':'') + '</span></div>' +
+            '<div class="receipt-row"><span class="lbl">Rate per Night</span><span class="val">' + fmtMoney(rate) + '</span></div>' +
+            '<hr class="receipt-divider">' +
+            '<div class="receipt-row"><span class="lbl">Subtotal</span><span class="val">' + fmtMoney(sub) + '</span></div>' +
+            discBlock +
+            '<div class="receipt-row"><span class="lbl">Tax (' + taxRate + '%)</span><span class="val">' + fmtMoney(taxAmt) + '</span></div>' +
+            (addTax > 0 ? '<div class="receipt-row"><span class="lbl">Additional Fees</span><span class="val">' + fmtMoney(addTax) + '</span></div>' : '') +
+            (b.notes ? '<div class="receipt-row"><span class="lbl" style="font-style:italic">Notes</span><span class="val" style="font-size:.8rem">' + b.notes + '</span></div>' : '') +
+            // Total box
+            '<div class="receipt-total">' +
+            '<div class="d-flex justify-content-between align-items-center">' +
+            '<div>' +
+            '<div class="total-lbl">Total Amount Due</div>' +
+            '<div class="total-amt">' + fmtMoney(total) + '</div>' +
+            '<div class="nights-info">' +
+            nights + ' night' + (nights!==1?'s':'') + ' × ' + fmtMoney(rate) +
+            (disc>0?' − discount':'') + ' + tax' +
+            '</div>' +
+            '</div>' +
+            payBadge(b.paymentStatus) +
+            '</div>' +
+            '</div>' +
+            // Action buttons — Pay button opens modal with correct discounted total
+            '<div class="d-flex gap-2 mt-3 no-print">' +
+            (canPay
+                ? '<button type="button" class="btn btn-hotel flex-fill" onclick="openPayFromReceipt()">' +
+                '<i class="bi bi-credit-card me-2"></i>Process Payment (' + fmtMoney(total) + ')' +
+                '</button>'
+                : '<button type="button" class="btn btn-success flex-fill" disabled>' +
+                '<i class="bi bi-check-circle me-2"></i>Payment Complete' +
+                '</button>') +
+            '<button type="button" class="btn btn-outline-secondary" onclick="printReceiptCard()">' +
+            '<i class="bi bi-printer"></i>' +
+            '</button>' +
+            '</div>' +
+            '</div>' +
+            '</div>';
+
+        document.getElementById('billResult').innerHTML = html;
+        document.getElementById('billResult').classList.remove('d-none');
+        document.getElementById('billResult').scrollIntoView({ behavior:'smooth', block:'start' });
+    }
+
+    // ══════════════════════════════════════════════
+    //  VIEW BILL MODAL (from list)
+    // ══════════════════════════════════════════════
+    async function viewBill(billId){
+        document.getElementById('viewBody').innerHTML =
+            '<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
+        getModal('viewModal').show();
+
+        try {
+            // Priority: genBill (has local discount) > allBills (may have session adj) > fetch
+            var b = null;
+            if (genBill && genBill.billId === billId){
+                b = genBill;
+            } else {
+                b = allBills.find(function(x){ return x.billId === billId; });
+            }
+            if (!b){
+                var fetched = await API.get('api/bills/' + billId);
+                if (!fetched) return;
+                b = fetched;
+            }
+
+            // Restore sessionStorage adjustment if discount is zero
+            if (!b.discountAmount || b.discountAmount === 0){
+                try {
+                    var stored = sessionStorage.getItem('bill_adj_' + billId);
+                    if (stored) b = Object.assign({}, b, JSON.parse(stored));
+                } catch(e){}
+            }
+
+            // Enrich with reservation data if guest/room missing
+            if (!b.guestName || b.guestName === '—' || !b.roomNumber || !b.checkinDate){
+                try {
+                    var allRes = await API.get('api/reservations');
+                    if (Array.isArray(allRes)){
+                        var res = allRes.find(function(r){ return r.reservationNumber === b.reservationNumber; });
+                        if (res){
+                            b = Object.assign({}, b, {
+                                guestName    : b.guestName    || res.guestName     || '—',
+                                guestContact : b.guestContact || res.contactNumber || '—',
+                                roomNumber   : b.roomNumber   || res.roomNumber    || '—',
+                                roomType     : b.roomType     || res.typeName      || '—',
+                                checkinDate  : b.checkinDate  || res.checkinDate   || null,
+                                checkoutDate : b.checkoutDate || res.checkoutDate  || null
+                            });
+                            if (!b.nights || b.nights===0) b.nights = calcNights(b.checkinDate, b.checkoutDate);
+                            if (!b.ratePerNight && b.nights>0) b.ratePerNight = parseFloat(b.subtotal||0)/b.nights;
+                        }
+                    }
+                } catch(e){}
+            }
+
+            // Always recalculate from components
+            var nights    = b.nights    || calcNights(b.checkinDate, b.checkoutDate);
+            var sub       = parseFloat(b.subtotal       || 0);
+            var disc      = parseFloat(b.discountAmount || 0);
+            var taxAmt    = parseFloat(b.taxAmount      || 0);
+            var addTax    = parseFloat(b.additionalTax  || 0);
+            var taxRate   = b.taxRate !== undefined ? parseFloat(b.taxRate) : 10;
+            var afterDisc = Math.max(0, sub - disc);
+            var total     = parseFloat((afterDisc + taxAmt + addTax).toFixed(2));
+            var rate      = parseFloat(b.ratePerNight   || 0);
+            var displayStatus = b.paymentStatus;
+
+            document.getElementById('viewBody').innerHTML =
+                '<div id="printArea">' +
+                // Hotel header
+                '<div class="text-center mb-4 pb-3" style="border-bottom:2px dashed #e0e8f0">' +
+                '<div style="width:52px;height:52px;background:linear-gradient(135deg,#1a3c5e,#2e6da4);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto .75rem;font-size:1.4rem;color:#fff"><i class="bi bi-building"></i></div>' +
+                '<h5 style="font-family:\'Playfair Display\',serif;color:#1a3c5e;margin:0">Hotel Management System</h5>' +
+                '<small class="text-muted">Official Bill Receipt</small>' +
+                '</div>' +
+                // Guest + Stay
+                '<div class="row g-3 mb-3">' +
+                '<div class="col-md-6">' +
+                '<div style="background:#f8fafc;border:1px solid #e8edf5;border-radius:10px;padding:.875rem">' +
+                '<div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.8px;color:#9ca3af;font-weight:700;margin-bottom:.5rem">Guest Information</div>' +
+                pRow('Name',    b.guestName||'—') +
+                pRow('Contact', b.guestContact||'—') +
+                '</div>' +
+                '</div>' +
+                '<div class="col-md-6">' +
+                '<div style="background:#f8fafc;border:1px solid #e8edf5;border-radius:10px;padding:.875rem">' +
+                '<div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.8px;color:#9ca3af;font-weight:700;margin-bottom:.5rem">Stay Details</div>' +
+                pRow('Room',     'Room ' + (b.roomNumber||'—') + ' (' + (b.roomType||'—') + ')') +
+                pRow('Check-in',  fmtDate(b.checkinDate)) +
+                pRow('Check-out', fmtDate(b.checkoutDate)) +
+                pRow('Duration',  nights + ' night' + (nights!==1?'s':'')) +
+                pRow('Rate/Night',fmtMoney(rate)) +
+                '</div>' +
+                '</div>' +
+                '</div>' +
+                // Bill table
+                '<table class="table table-bordered mb-3" style="font-size:.875rem"><tbody>' +
+                vrow('Bill Number', b.billNumber||'—') +
+                vrow('Reservation', b.reservationNumber||'—') +
+                vrow('Nights',      nights + ' night' + (nights!==1?'s':'')) +
+                vrow('Rate/Night',  fmtMoney(rate)) +
+                '</tbody></table>' +
+                // Totals
+                '<div class="p-3 rounded-3 mb-3" style="background:#f8fafc;border:1.5px solid #e0e8f0">' +
+                '<div class="d-flex justify-content-between py-2" style="border-bottom:1px solid #f0f4f8">' +
+                '<span class="text-muted">Room Charges (Subtotal)</span>' +
+                '<span class="fw-semibold">' + fmtMoney(sub) + '</span>' +
+                '</div>' +
+                (disc > 0
+                    ? '<div class="d-flex justify-content-between py-2" style="background:#f0fff4;border-radius:8px;padding:.65rem .85rem!important;margin:.35rem 0;border:1.5px solid #86efac">' +
+                    '<span style="color:#166534;font-weight:700;display:flex;align-items:center;gap:.35rem">' +
+                    '<i class="bi bi-tag-fill"></i>Discount' +
+                    (b.discountReason ? ' · ' + b.discountReason : '') +
+                    '</span>' +
+                    '<span style="color:#15803d;font-weight:800;font-size:1.05rem">− ' + fmtMoney(disc) + '</span>' +
+                    '</div>' +
+                    '<div class="d-flex justify-content-between py-2" style="border-bottom:1px solid #f0f4f8">' +
+                    '<span class="fw-semibold text-muted">After Discount</span>' +
+                    '<span class="fw-bold">' + fmtMoney(afterDisc) + '</span>' +
+                    '</div>'
+                    : '') +
+                '<div class="d-flex justify-content-between py-2" style="border-bottom:1px solid #f0f4f8">' +
+                '<span class="text-muted">Tax (' + taxRate + '%)</span>' +
+                '<span class="fw-semibold">' + fmtMoney(taxAmt) + '</span>' +
+                '</div>' +
+                (addTax > 0
+                    ? '<div class="d-flex justify-content-between py-2" style="border-bottom:1px solid #f0f4f8">' +
+                    '<span class="text-muted">Additional Fees</span>' +
+                    '<span class="fw-semibold">' + fmtMoney(addTax) + '</span>' +
+                    '</div>'
+                    : '') +
+                (b.notes ? '<div class="py-2" style="border-bottom:1px solid #f0f4f8"><small class="text-muted" style="font-style:italic">📝 ' + b.notes + '</small></div>' : '') +
+                '<div class="d-flex justify-content-between py-2 mt-1">' +
+                '<span class="fw-bold" style="font-size:1.05rem;color:#1a3c5e">Total Amount</span>' +
+                '<span style="font-family:\'Playfair Display\',serif;font-size:1.5rem;font-weight:700;color:#1a3c5e">' + fmtMoney(total) + '</span>' +
+                '</div>' +
+                '</div>' +
+                '<div class="text-center">' + payBadge(displayStatus) + '</div>' +
+                '</div>';
+
+        } catch(err){
+            document.getElementById('viewBody').innerHTML =
+                '<div class="text-danger p-3">' +
+                '<i class="bi bi-exclamation-triangle me-2"></i>' + err.message + '</div>';
+        }
+    }
+
+    // ══════════════════════════════════════════════
+    //  PRINT FUNCTIONS
+    // ══════════════════════════════════════════════
+    function printBill(){
+        var area = document.getElementById('printArea');
+        if (!area){ window.print(); return; }
+        openPrintWindow(area.innerHTML);
+    }
+
+    function printReceiptCard(){
+        if (!genBill){ window.print(); return; }
+        var b         = genBill;
+        var nights    = b.nights    || calcNights(b.checkinDate, b.checkoutDate);
+        var sub       = parseFloat(b.subtotal       || 0);
+        var disc      = parseFloat(b.discountAmount || 0);
+        var taxAmt    = parseFloat(b.taxAmount      || 0);
+        var addTax    = parseFloat(b.additionalTax  || 0);
+        var taxRate   = b.taxRate !== undefined ? parseFloat(b.taxRate) : 10;
+        var afterDisc = Math.max(0, sub - disc);
+        var total     = parseFloat((afterDisc + taxAmt + addTax).toFixed(2));
+        var rate      = parseFloat(b.ratePerNight   || 0);
+
+        var discSection = disc > 0
+            ? '<tr style="background:#f0fff4">' +
+            '<td style="padding:.4rem .5rem;color:#166534;font-weight:600">🏷 Discount' +
+            (b.discountReason ? ' (' + b.discountReason + ')' : '') +
+            '</td>' +
+            '<td style="padding:.4rem .5rem;color:#15803d;font-weight:700;text-align:right">− $' + disc.toFixed(2) + '</td>' +
+            '</tr>' +
+            '<tr><td style="padding:.4rem .5rem;font-weight:600">After Discount</td>' +
+            '<td style="padding:.4rem .5rem;font-weight:700;text-align:right">$' + afterDisc.toFixed(2) + '</td></tr>'
+            : '';
+
+        var html =
+            '<div style="font-family:Segoe UI,sans-serif;max-width:520px;margin:0 auto">' +
+            '<div style="text-align:center;margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:2px dashed #ccc">' +
+            '<div style="width:52px;height:52px;background:#1a3c5e;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;font-size:1.5rem;color:#fff;margin-bottom:.75rem">🏨</div>' +
+            '<div><h2 style="color:#1a3c5e;margin:0;font-size:1.4rem">Hotel Management System</h2>' +
+            '<p style="color:#888;margin:.25rem 0 0;font-size:.85rem">Official Receipt & Tax Invoice</p></div>' +
+            '</div>' +
+            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">' +
+            '<div style="background:#f8fafc;padding:.75rem;border-radius:8px;border:1px solid #e0e0e0">' +
+            '<div style="font-size:.65rem;text-transform:uppercase;letter-spacing:.8px;color:#9ca3af;font-weight:700;margin-bottom:.35rem">Guest Information</div>' +
+            '<div style="font-weight:700;color:#1a3c5e">' + (b.guestName||'—') + '</div>' +
+            '<div style="font-size:.85rem;color:#666">' + (b.guestContact||'—') + '</div>' +
+            '</div>' +
+            '<div style="background:#f8fafc;padding:.75rem;border-radius:8px;border:1px solid #e0e0e0">' +
+            '<div style="font-size:.65rem;text-transform:uppercase;letter-spacing:.8px;color:#9ca3af;font-weight:700;margin-bottom:.35rem">Stay Details</div>' +
+            '<div style="font-weight:700;color:#1a3c5e">Room ' + (b.roomNumber||'—') + ' (' + (b.roomType||'—') + ')</div>' +
+            '<div style="font-size:.82rem;color:#666">' + fmtDate(b.checkinDate) + ' → ' + fmtDate(b.checkoutDate) + '</div>' +
+            '<div style="font-size:.82rem;color:#666">' + nights + ' night' + (nights!==1?'s':'') + ' × $' + rate.toFixed(2) + '</div>' +
+            '</div>' +
+            '</div>' +
+            '<table style="width:100%;border-collapse:collapse;margin-bottom:1rem;font-size:.875rem">' +
+            '<tr style="background:#f8fafc"><td style="padding:.4rem">Bill Number</td><td style="padding:.4rem;font-weight:600;text-align:right">' + (b.billNumber||'—') + '</td></tr>' +
+            '<tr><td style="padding:.4rem">Reservation</td><td style="padding:.4rem;font-weight:600;text-align:right">' + (b.reservationNumber||'—') + '</td></tr>' +
+            '<tr style="background:#f8fafc"><td style="padding:.4rem">Date Issued</td><td style="padding:.4rem;text-align:right">' + fmtDate(new Date().toISOString()) + '</td></tr>' +
+            '</table>' +
+            '<div style="background:#f8fafc;border:1.5px solid #e0e0e0;border-radius:8px;padding:1rem;margin-bottom:1rem">' +
+            '<table style="width:100%;border-collapse:collapse">' +
+            '<tr><td style="padding:.35rem 0;color:#555">Room Charges (Subtotal)</td><td style="text-align:right;padding:.35rem 0;font-weight:600">$' + sub.toFixed(2) + '</td></tr>' +
+            discSection +
+            '<tr><td style="padding:.35rem 0;color:#555">Tax (' + taxRate + '%)</td><td style="text-align:right;padding:.35rem 0;font-weight:600">$' + taxAmt.toFixed(2) + '</td></tr>' +
+            (addTax > 0 ? '<tr><td style="padding:.35rem 0;color:#555">Additional Fees</td><td style="text-align:right;font-weight:600">$' + addTax.toFixed(2) + '</td></tr>' : '') +
+            (b.notes ? '<tr><td colspan="2" style="padding:.5rem 0;color:#888;font-size:.8rem;border-top:1px dashed #ddd;font-style:italic">Notes: ' + b.notes + '</td></tr>' : '') +
+            '<tr style="border-top:2px solid #1a3c5e">' +
+            '<td style="padding:.75rem 0;font-weight:700;font-size:1rem;color:#1a3c5e">TOTAL AMOUNT DUE</td>' +
+            '<td style="text-align:right;font-weight:700;font-size:1.5rem;color:#1a3c5e">$' + total.toFixed(2) + '</td>' +
+            '</tr>' +
+            '</table>' +
+            '</div>' +
+            '<div style="text-align:center;color:#888;font-size:.8rem;border-top:2px dashed #ddd;padding-top:1rem">' +
+            '<p style="margin:0">Thank you for choosing our hotel!</p>' +
+            '<p style="margin:.25rem 0 0">Please contact our front desk for any inquiries.</p>' +
+            '</div></div>';
+
+        openPrintWindow(html);
+    }
+
+    function openPrintWindow(html){
+        var w = window.open('','_blank','width=620,height=850');
+        w.document.write(
+            '<!DOCTYPE html><html><head><title>Bill Receipt</title>' +
+            '<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">' +
+            '<style>body{font-family:"Segoe UI",sans-serif;padding:2rem;background:#fff}' +
+            '.fw-semibold{font-weight:600}.fw-bold{font-weight:700}' +
+            '.text-success{color:#198754!important}.text-muted{color:#6c757d!important}</style>' +
+            '</head><body>' + html + '</body></html>');
+        w.document.close();
+        setTimeout(function(){ w.print(); }, 300);
+    }
+
+    // ══════════════════════════════════════════════
+    //  PAYMENT — OPEN MODAL
+    // ══════════════════════════════════════════════
+
+    // Called by Pay button on the generated receipt card
+    // genBill is always up-to-date (updated by applyAdjustments)
+    function openPayFromReceipt(){
+        if (!genBill){ Toast.show('No bill loaded','warning'); return; }
+        var sub      = parseFloat(genBill.subtotal       || 0);
+        var disc     = parseFloat(genBill.discountAmount || 0);
+        var taxAmt   = parseFloat(genBill.taxAmount      || 0);
+        var addTax   = parseFloat(genBill.additionalTax  || 0);
+        var afterDisc= Math.max(0, sub - disc);
+        var total    = parseFloat((afterDisc + taxAmt + addTax).toFixed(2));
+        openPayModal(genBill.billId, genBill.billNumber||'', total, disc);
+    }
+
+    // Called by Pay button in the bills list table
+    function openPayFromList(billId, billNo, sub, disc, taxAmt, addTax){
+        var s  = parseFloat(sub)    || 0;
+        var d  = parseFloat(disc)   || 0;
+        var t  = parseFloat(taxAmt) || 0;
+        var at = parseFloat(addTax) || 0;
+        var afterDisc = Math.max(0, s - d);
+        var total = parseFloat((afterDisc + t + at).toFixed(2));
+        // If all components are zero, it means the backend didn't return them —
+        // check sessionStorage for adjustment
+        if (s === 0){
+            try {
+                var stored = sessionStorage.getItem('bill_adj_' + billId);
+                if (stored){
+                    var adj = JSON.parse(stored);
+                    s  = parseFloat(adj.subtotal       || 0);
+                    d  = parseFloat(adj.discountAmount || 0);
+                    t  = parseFloat(adj.taxAmount      || 0);
+                    at = parseFloat(adj.additionalTax  || 0);
+                    afterDisc = Math.max(0, s - d);
+                    total = parseFloat((afterDisc + t + at).toFixed(2));
+                }
+            } catch(e){}
+        }
+        // Also prefer genBill if it matches
+        if (genBill && genBill.billId === billId){
+            openPayFromReceipt();
+            return;
+        }
+        openPayModal(billId, billNo, total, d);
+    }
+
+    function openPayModal(billId, billNo, finalTotal, discountAmt){
+        actBillId     = billId;
+        actBillNo     = billNo;
+        actFinalTotal = finalTotal;
+
+        document.getElementById('pay_billno').textContent  = billNo;
+        document.getElementById('pay_total').textContent   = fmtMoney(finalTotal);
+        document.getElementById('pay_amount').value        = finalTotal.toFixed(2);
+        document.getElementById('pay_final_total').value   = finalTotal.toFixed(2);
+        document.getElementById('pay_amount').classList.remove('is-invalid');
+
+        if (discountAmt > 0){
+            document.getElementById('pay_disc_row').style.display    = 'flex';
+            document.getElementById('pay_disc_display').textContent  = '− ' + fmtMoney(discountAmt);
+            document.getElementById('pay_hint').textContent =
+                'Discount of ' + fmtMoney(discountAmt) + ' has been applied to this bill.';
+        } else {
+            document.getElementById('pay_disc_row').style.display = 'none';
+            document.getElementById('pay_hint').textContent = '';
+        }
+
+        document.getElementById('pay_method').value = 'CASH';
+        document.querySelectorAll('.pay-opt').forEach(function(el){ el.classList.remove('selected'); });
+        document.querySelector('.pay-opt').classList.add('selected');
+        document.getElementById('payErr').classList.add('d-none');
+        getModal('payModal').show();
+    }
+
+    function selMethod(el, method){
+        document.querySelectorAll('.pay-opt').forEach(function(o){ o.classList.remove('selected'); });
+        el.classList.add('selected');
+        document.getElementById('pay_method').value = method;
+    }
+
+    // ══════════════════════════════════════════════
+    //  SUBMIT PAYMENT
+    // ══════════════════════════════════════════════
+    async function submitPayment(){
+        var amt = parseFloat(document.getElementById('pay_amount').value);
+        if (!amt || amt <= 0){
+            document.getElementById('pay_amount').classList.add('is-invalid');
+            return;
+        }
+        document.getElementById('pay_amount').classList.remove('is-invalid');
+
+        // finalTotal = discounted total stored when modal opened
+        var finalTotal = parseFloat(document.getElementById('pay_final_total').value) || amt;
+
+        setBL('btnPay','btnPayText','btnPaySpin', true);
+        document.getElementById('payErr').classList.add('d-none');
+
+        try {
+            var data = await API.post('api/bills/payment', {
+                billId       : actBillId,
+                paymentMethod: document.getElementById('pay_method').value,
+                amount       : amt,
+                totalAmount  : finalTotal,    // discounted total — backend marks PAID when amount >= this
+                expectedTotal: finalTotal
+            });
+            if (!data) return;
+
+            getModal('payModal').hide();
+
+            // Determine status locally (don't trust backend if it compared wrong total)
+            var newStatus = amt >= finalTotal ? 'PAID' : 'PARTIAL';
+
+            if (newStatus === 'PAID'){
+                try { sessionStorage.removeItem('bill_adj_' + actBillId); } catch(e){}
+            }
+
+            Toast.show(
+                newStatus === 'PAID'
+                    ? '✅ Payment complete! ' + fmtMoney(amt) + ' received for ' + actBillNo
+                    : '⚠️ Partial payment of ' + fmtMoney(amt) + ' recorded for ' + actBillNo,
+                newStatus === 'PAID' ? 'success' : 'warning', 5000);
+
+            // Update local caches
+            var idx = allBills.findIndex(function(b){ return b.billId === actBillId; });
+            if (idx > -1) allBills[idx].paymentStatus = newStatus;
+
+            if (genBill && genBill.billId === actBillId){
+                genBill.paymentStatus = newStatus;
+                showBillReceipt(genBill);
+            }
+
+            loadBills();
+
+        } catch(err){
+            var e = document.getElementById('payErr');
+            e.textContent = err.message;
+            e.classList.remove('d-none');
+        } finally {
+            setBL('btnPay','btnPayText','btnPaySpin', false);
+        }
+    }
+
+    // ══════════════════════════════════════════════
+    //  HELPERS
+    // ══════════════════════════════════════════════
+    function payBadge(status){
+        var map = {
+            'PAID'   :['#d1fae5','#065f46','bi-check-circle','PAID'],
+            'UNPAID' :['#fee2e2','#991b1b','bi-clock','UNPAID'],
+            'PARTIAL':['#fef3c7','#92400e','bi-dash-circle','PARTIAL']
+        };
+        var s = map[status] || map['UNPAID'];
+        return '<span style="display:inline-flex;align-items:center;gap:.35rem;padding:.3rem .8rem;border-radius:20px;background:' + s[0] + ';color:' + s[1] + ';font-size:.78rem;font-weight:700;letter-spacing:.3px">' +
+            '<i class="bi ' + s[2] + '"></i>' + s[3] + '</span>';
+    }
+
+    function calcNights(cin, cout){
+        if (!cin || !cout) return 0;
+        return Math.max(0, Math.floor((new Date(cout)-new Date(cin))/86400000));
+    }
+
+    // Info row for receipt card info-grid
+    function iRow(key, val){
+        return '<div class="info-row"><span class="ir-key">' + key + '</span>' +
+            '<span class="ir-val">' + (val||'—') + '</span></div>';
+    }
+
+    // Info row for view modal
+    function pRow(key, val){
+        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:.2rem 0;font-size:.83rem">' +
+            '<span style="color:#6b7280">' + key + '</span>' +
+            '<span style="font-weight:600;color:#1a3c5e">' + (val||'—') + '</span>' +
+            '</div>';
+    }
+
+    // Table row for view modal details table
+    function vrow(label, value){
+        return '<tr><td style="font-weight:600;color:#555;width:38%;background:#f8fafc">' + label + '</td>' +
+            '<td>' + (value||'—') + '</td></tr>';
+    }
+
+    function setGenLoad(on){
+        document.getElementById('genText').classList.toggle('d-none', on);
+        document.getElementById('genSpin').classList.toggle('d-none', !on);
+        document.querySelector('[onclick="generateBill()"]').disabled = on;
+    }
+
+    function setBL(btn, txt, spin, on){
+        document.getElementById(txt).classList.toggle('d-none', on);
+        document.getElementById(spin).classList.toggle('d-none', !on);
+        document.getElementById(btn).disabled = on;
+    }
+
+    // Escape single quotes for use in onclick attributes
+    function escQ(s){ return String(s).replace(/'/g,"&#39;"); }
+</script>
+</body>
+</html>

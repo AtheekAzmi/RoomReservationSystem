@@ -3,26 +3,219 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Dashboard — Hotel Reservation System</title>
+    <title>Dashboard — Hotel System</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <link href="css/style.css" rel="stylesheet">
+    <style>
+        :root { --primary:#1a3c5e; --accent:#e8a020; --sidebar:250px; }
+        * { box-sizing:border-box; }
+        body {
+            background:#f0f4f8;
+            font-family:'Segoe UI',sans-serif;
+            margin:0; padding:0;
+        }
+
+        /* ── Sidebar ─────────────────────────────── */
+        .sidebar {
+            position:fixed; top:0; left:0;
+            width:var(--sidebar); height:100vh;
+            background:var(--primary); z-index:1000;
+            overflow-y:auto; display:flex;
+            flex-direction:column;
+        }
+        .sidebar .nav-link {
+            color:rgba(255,255,255,.75);
+            padding:.65rem 1rem;
+            display:flex; align-items:center;
+            gap:.75rem; font-size:.9rem;
+            border-left:3px solid transparent;
+            transition:all .2s; text-decoration:none;
+        }
+        .sidebar .nav-link:hover,
+        .sidebar .nav-link.active {
+            background:rgba(255,255,255,.12);
+            color:#fff; border-left-color:var(--accent);
+        }
+
+        /* ── Layout ──────────────────────────────── */
+        .main-content {
+            margin-left:var(--sidebar); min-height:100vh;
+            display:flex; flex-direction:column;
+        }
+        .topbar {
+            background:#fff; padding:.875rem 1.5rem;
+            border-bottom:1px solid #e0e0e0;
+            display:flex; align-items:center;
+            justify-content:space-between;
+            position:sticky; top:0; z-index:999;
+            flex-shrink:0;
+        }
+        .content-area { padding:1.5rem; flex:1; }
+
+        /* ── Hero ────────────────────────────────── */
+        .hero {
+            background:linear-gradient(135deg,#1a3c5e,#2e6da4);
+            border-radius:14px; padding:1.75rem 2rem;
+            color:#fff; margin-bottom:1.5rem;
+            display:flex; align-items:center;
+            justify-content:space-between;
+            box-shadow:0 4px 20px rgba(26,60,94,.25);
+        }
+        .hero h4 { font-weight:700; margin-bottom:.25rem; }
+        .hero p  { opacity:.8; margin:0; font-size:.9rem; }
+
+        /* ── Stat Cards ──────────────────────────── */
+        .stat-card {
+            background:#fff; border-radius:12px;
+            padding:1.25rem; height:100%;
+            box-shadow:0 2px 8px rgba(0,0,0,.06);
+            display:flex; align-items:center;
+            gap:1rem; transition:all .2s;
+            text-decoration:none; color:inherit;
+            border:2px solid transparent;
+            cursor:pointer;
+        }
+        .stat-card:hover {
+            transform:translateY(-3px);
+            box-shadow:0 6px 20px rgba(0,0,0,.1);
+            border-color:var(--primary);
+            color:inherit;
+        }
+        .stat-icon {
+            width:52px; height:52px; border-radius:12px;
+            display:flex; align-items:center;
+            justify-content:center;
+            font-size:1.4rem; flex-shrink:0;
+        }
+        .stat-icon.blue   { background:#e3f2fd; color:#1565c0; }
+        .stat-icon.green  { background:#e8f5e9; color:#2e7d32; }
+        .stat-icon.orange { background:#fff3e0; color:#e65100; }
+        .stat-icon.purple { background:#f3e5f5; color:#6a1b9a; }
+        .stat-info h3 {
+            font-size:1.75rem; font-weight:700;
+            margin:0; line-height:1; color:var(--primary);
+        }
+        .stat-info p {
+            font-size:.8rem; color:#888;
+            margin:.2rem 0 .15rem;
+        }
+        .stat-info small { font-size:.75rem; font-weight:500; }
+
+        /* ── Nav Cards ───────────────────────────── */
+        .nav-card {
+            background:#fff; border-radius:12px;
+            padding:1.25rem .75rem; text-align:center;
+            height:100%;
+            box-shadow:0 2px 8px rgba(0,0,0,.06);
+            transition:all .2s; text-decoration:none;
+            color:inherit; display:block;
+            border:2px solid transparent;
+        }
+        .nav-card:hover {
+            transform:translateY(-3px);
+            box-shadow:0 6px 20px rgba(0,0,0,.1);
+            color:inherit;
+        }
+        .nav-card i {
+            font-size:2rem; display:block;
+            margin-bottom:.5rem;
+        }
+        .nav-card span {
+            font-size:.82rem; font-weight:600; color:#333;
+        }
+
+        /* ── Content Cards ───────────────────────── */
+        .card-box {
+            background:#fff; border-radius:12px;
+            padding:1.25rem;
+            box-shadow:0 2px 8px rgba(0,0,0,.06);
+            margin-bottom:1rem;
+        }
+        .card-box:last-child { margin-bottom:0; }
+        .card-box-header {
+            display:flex; align-items:center;
+            justify-content:space-between;
+            margin-bottom:1rem; padding-bottom:.75rem;
+            border-bottom:1px solid #f0f0f0;
+        }
+        .card-box-header h6 {
+            margin:0; font-weight:600;
+            color:var(--primary); font-size:.95rem;
+        }
+
+        /* ── Table ───────────────────────────────── */
+        .table thead th {
+            background:#f8fafc; color:#555;
+            font-size:.75rem; font-weight:600;
+            text-transform:uppercase; letter-spacing:.5px;
+            border-bottom:2px solid #e0e0e0;
+            white-space:nowrap;
+        }
+        .table tbody td {
+            vertical-align:middle; font-size:.85rem;
+            border-color:#f5f5f5;
+        }
+        .table tbody tr:hover { background:#f8faff; }
+
+        /* ── Progress ────────────────────────────── */
+        .progress { height:8px; border-radius:4px; }
+
+        /* ── Quick Buttons ───────────────────────── */
+        .quick-btn {
+            display:flex; align-items:center; gap:.75rem;
+            padding:.7rem 1rem; border-radius:8px;
+            font-size:.875rem; font-weight:500;
+            text-decoration:none; color:#333;
+            background:#f8fafc; border:1px solid #e8e8e8;
+            transition:all .2s; margin-bottom:.5rem;
+        }
+        .quick-btn:last-child { margin-bottom:0; }
+        .quick-btn:hover {
+            background:var(--primary); color:#fff;
+            border-color:var(--primary);
+        }
+        .quick-btn i { font-size:1.1rem; }
+
+        /* ── Room summary ────────────────────────── */
+        .room-row { margin-bottom:.85rem; }
+        .room-row:last-child { margin-bottom:0; }
+        .room-row-label {
+            display:flex; justify-content:space-between;
+            font-size:.82rem; margin-bottom:.3rem;
+        }
+        .occupancy-summary {
+            background:#f8fafc; border-radius:8px;
+            padding:.75rem; margin-bottom:1rem;
+        }
+        .occ-col { text-align:center; }
+        .occ-val {
+            font-size:1.1rem; font-weight:700;
+            display:block;
+        }
+        .occ-lbl {
+            font-size:.7rem; color:#888;
+        }
+
+        @media(max-width:768px){
+            .sidebar      { transform:translateX(-100%); }
+            .main-content { margin-left:0; }
+        }
+    </style>
 </head>
 <body>
 
-<!-- Sidebar -->
+<!-- SIDEBAR -->
 <div class="sidebar" id="sidebar"></div>
 
-<!-- Main Content -->
+<!-- MAIN -->
 <div class="main-content">
 
     <!-- Topbar -->
     <div class="topbar">
-        <div class="d-flex align-items-center gap-3">
-            <h5 class="mb-0" style="color:var(--primary);font-weight:600">
-                <i class="bi bi-speedometer2 me-2"></i>Dashboard
-            </h5>
-        </div>
+        <h5 class="mb-0"
+            style="color:var(--primary);font-weight:600">
+            <i class="bi bi-speedometer2 me-2"></i>Dashboard
+        </h5>
         <div class="d-flex align-items-center gap-2">
       <span class="text-muted" style="font-size:.85rem">
         <i class="bi bi-person-circle me-1"></i>
@@ -32,7 +225,8 @@
             <button type="button"
                     class="btn btn-sm btn-outline-secondary"
                     onclick="loadDashboard()">
-                <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                <i class="bi bi-arrow-clockwise me-1"></i>
+                Refresh
             </button>
         </div>
     </div>
@@ -40,18 +234,19 @@
     <!-- Content -->
     <div class="content-area">
 
-        <!-- Welcome Banner -->
-        <div class="content-card mb-4"
-             style="background:linear-gradient(135deg,#1a3c5e,#2e6da4);color:#fff">
-            <div class="d-flex align-items-center justify-content-between">
-                <div>
-                    <h4 class="mb-1">Welcome back, <span id="welcomeName"></span>! 👋</h4>
-                    <p class="mb-0" style="opacity:0.85">
-                        Here's what's happening at the hotel today.
-                    </p>
-                </div>
-                <i class="bi bi-building" style="font-size:4rem;opacity:0.2"></i>
+        <!-- Hero -->
+        <div class="hero">
+            <div>
+                <h4 id="heroGreet">Welcome back!</h4>
+                <p>
+                    <i class="bi bi-calendar3 me-1"></i>
+                    <span id="heroDate"></span>
+                    &nbsp;·&nbsp;
+                    Here's what's happening at the hotel today.
+                </p>
             </div>
+            <i class="bi bi-building"
+               style="font-size:4rem;opacity:.2"></i>
         </div>
 
         <!-- Stat Cards -->
@@ -61,346 +256,372 @@
             </div>
         </div>
 
-        <!-- Navigation Cards -->
-        <div class="row g-3 mb-4">
-            <div class="col-6 col-md-4 col-lg-2">
-                <a href="reservations.html" class="text-decoration-none">
-                    <div class="text-center p-3 bg-white rounded-3
-                  shadow-sm h-100"
-                         style="border:2px solid transparent;
-                  transition:all .2s;cursor:pointer"
-                         onmouseover="this.style.borderColor='#1a3c5e'"
-                         onmouseout="this.style.borderColor='transparent'">
-                        <i class="bi bi-calendar-check"
-                           style="font-size:2rem;color:#1a3c5e"></i>
-                        <p class="mb-0 mt-2 fw-semibold"
-                           style="font-size:.82rem;color:#333">
-                            Reservations
-                        </p>
-                    </div>
-                </a>
-            </div>
-            <div class="col-6 col-md-4 col-lg-2">
-                <a href="guests.html" class="text-decoration-none">
-                    <div class="text-center p-3 bg-white rounded-3
-                  shadow-sm h-100"
-                         style="border:2px solid transparent;
-                  transition:all .2s;cursor:pointer"
-                         onmouseover="this.style.borderColor='#2e7d32'"
-                         onmouseout="this.style.borderColor='transparent'">
-                        <i class="bi bi-people"
-                           style="font-size:2rem;color:#2e7d32"></i>
-                        <p class="mb-0 mt-2 fw-semibold"
-                           style="font-size:.82rem;color:#333">
-                            Guests
-                        </p>
-                    </div>
-                </a>
-            </div>
-            <div class="col-6 col-md-4 col-lg-2">
-                <a href="rooms.html" class="text-decoration-none">
-                    <div class="text-center p-3 bg-white rounded-3
-                  shadow-sm h-100"
-                         style="border:2px solid transparent;
-                  transition:all .2s;cursor:pointer"
-                         onmouseover="this.style.borderColor='#e65100'"
-                         onmouseout="this.style.borderColor='transparent'">
-                        <i class="bi bi-door-open"
-                           style="font-size:2rem;color:#e65100"></i>
-                        <p class="mb-0 mt-2 fw-semibold"
-                           style="font-size:.82rem;color:#333">
-                            Rooms
-                        </p>
-                    </div>
-                </a>
-            </div>
-            <div class="col-6 col-md-4 col-lg-2">
-                <a href="billing.html" class="text-decoration-none">
-                    <div class="text-center p-3 bg-white rounded-3
-                  shadow-sm h-100"
-                         style="border:2px solid transparent;
-                  transition:all .2s;cursor:pointer"
-                         onmouseover="this.style.borderColor='#1565c0'"
-                         onmouseout="this.style.borderColor='transparent'">
-                        <i class="bi bi-receipt"
-                           style="font-size:2rem;color:#1565c0"></i>
-                        <p class="mb-0 mt-2 fw-semibold"
-                           style="font-size:.82rem;color:#333">
-                            Billing
-                        </p>
-                    </div>
-                </a>
-            </div>
-            <div class="col-6 col-md-4 col-lg-2">
-                <a href="reports.html" class="text-decoration-none">
-                    <div class="text-center p-3 bg-white rounded-3
-                  shadow-sm h-100"
-                         style="border:2px solid transparent;
-                  transition:all .2s;cursor:pointer"
-                         onmouseover="this.style.borderColor='#6a1b9a'"
-                         onmouseout="this.style.borderColor='transparent'">
-                        <i class="bi bi-bar-chart-line"
-                           style="font-size:2rem;color:#6a1b9a"></i>
-                        <p class="mb-0 mt-2 fw-semibold"
-                           style="font-size:.82rem;color:#333">
-                            Reports
-                        </p>
-                    </div>
-                </a>
-            </div>
-            <div class="col-6 col-md-4 col-lg-2 admin-only">
-                <a href="staff.html" class="text-decoration-none">
-                    <div class="text-center p-3 bg-white rounded-3
-                  shadow-sm h-100"
-                         style="border:2px solid transparent;
-                  transition:all .2s;cursor:pointer"
-                         onmouseover="this.style.borderColor='#c62828'"
-                         onmouseout="this.style.borderColor='transparent'">
-                        <i class="bi bi-person-badge"
-                           style="font-size:2rem;color:#c62828"></i>
-                        <p class="mb-0 mt-2 fw-semibold"
-                           style="font-size:.82rem;color:#333">
-                            Staff
-                        </p>
-                    </div>
-                </a>
-            </div>
-        </div>
+        <!-- Nav Cards -->
+        <div class="row g-3 mb-4" id="navCards"></div>
 
-        <!-- Two column layout -->
+        <!-- Bottom Row -->
         <div class="row g-3">
 
             <!-- Recent Reservations -->
             <div class="col-lg-7">
-                <div class="content-card">
-                    <div class="card-header-custom">
-                        <h6><i class="bi bi-calendar-check me-2"></i>Recent Reservations</h6>
-                        <a href="reservations.html" class="btn btn-sm btn-hotel">
+                <div class="card-box">
+                    <div class="card-box-header">
+                        <h6>
+                            <i class="bi bi-calendar-check me-2"></i>
+                            Recent Reservations
+                        </h6>
+                        <a href="reservations.html"
+                           class="btn btn-sm btn-hotel px-3"
+                           style="background:linear-gradient(
+                      135deg,#1a3c5e,#2e6da4);
+                      color:#fff;border:none;
+                      border-radius:8px;
+                      font-size:.8rem">
                             View All
                         </a>
                     </div>
-                    <div id="recentReservations">
-                        <div class="loading-overlay">
-                            <div class="spinner-border spinner-border-sm text-primary"></div>
-                            <span>Loading...</span>
+                    <div id="recentRes">
+                        <div class="text-center py-4 text-muted">
+                            <div class="spinner-border spinner-border-sm
+                           text-primary mb-2"></div>
+                            <p class="mb-0 small">Loading…</p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Room Status Summary -->
+            <!-- Right column -->
             <div class="col-lg-5">
-                <div class="content-card">
-                    <div class="card-header-custom">
-                        <h6><i class="bi bi-door-open me-2"></i>Room Status</h6>
-                        <a href="rooms.html" class="btn btn-sm btn-hotel">View All</a>
+
+                <!-- Room Status -->
+                <div class="card-box">
+                    <div class="card-box-header">
+                        <h6>
+                            <i class="bi bi-door-open me-2"></i>
+                            Room Status
+                        </h6>
+                        <a href="rooms.html"
+                           class="btn btn-sm btn-outline-secondary"
+                           style="font-size:.8rem;padding:.3rem .75rem">
+                            View All
+                        </a>
                     </div>
-                    <div id="roomSummary">
-                        <div class="loading-overlay">
-                            <div class="spinner-border spinner-border-sm text-primary"></div>
-                            <span>Loading...</span>
+                    <div id="roomStatus">
+                        <div class="text-center py-4 text-muted">
+                            <div class="spinner-border spinner-border-sm
+                           text-primary mb-2"></div>
+                            <p class="mb-0 small">Loading…</p>
                         </div>
                     </div>
                 </div>
 
                 <!-- Quick Actions -->
-                <!-- Quick Actions -->
-                <div class="content-card">
-                    <div class="card-header-custom">
-                        <h6><i class="bi bi-lightning me-2"></i>Quick Actions</h6>
+                <div class="card-box">
+                    <div class="card-box-header">
+                        <h6>
+                            <i class="bi bi-lightning me-2"></i>
+                            Quick Actions
+                        </h6>
                     </div>
-                    <div class="d-grid gap-2">
-                        <a href="reservations.html" class="btn btn-hotel">
-                            <i class="bi bi-plus-circle me-2"></i>New Reservation
-                        </a>
-                        <a href="guests.html" class="btn btn-hotel">
-                            <i class="bi bi-people me-2"></i>Manage Guests
-                        </a>
-                        <a href="rooms.html" class="btn btn-outline-primary">
-                            <i class="bi bi-door-open me-2"></i>View Rooms
-                        </a>
-                        <a href="billing.html" class="btn btn-outline-primary">
-                            <i class="bi bi-receipt me-2"></i>Generate Bill
-                        </a>
-                        <a href="reports.html" class="btn btn-outline-secondary">
-                            <i class="bi bi-bar-chart-line me-2"></i>View Reports
-                        </a>
-                        <a href="staff.html"
-                           class="btn btn-outline-secondary admin-only">
-                            <i class="bi bi-person-badge me-2"></i>Manage Staff
-                        </a>
-                    </div>
+                    <a href="reservations.html" class="quick-btn">
+                        <i class="bi bi-plus-circle"></i>
+                        New Reservation
+                    </a>
+                    <a href="guests.html" class="quick-btn">
+                        <i class="bi bi-people"></i>
+                        Manage Guests
+                    </a>
+                    <a href="rooms.html" class="quick-btn">
+                        <i class="bi bi-door-open"></i>
+                        View Rooms
+                    </a>
+                    <a href="billing.html" class="quick-btn">
+                        <i class="bi bi-receipt"></i>
+                        Generate Bill
+                    </a>
+                    <a href="reports.html" class="quick-btn">
+                        <i class="bi bi-bar-chart-line"></i>
+                        View Reports
+                    </a>
+                    <a href="staff.html" class="quick-btn admin-only">
+                        <i class="bi bi-person-badge"></i>
+                        Manage Staff
+                    </a>
                 </div>
-            </div>
 
+            </div>
         </div>
+
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script src="../resources/web/css/js/app.js"></script>
+<!-- ✅ FIXED: correct path to app.js -->
+<script src="js/app.js"></script>
 <script>
-    initPage('dashboard.html');
+    'use strict';
 
-    // Set welcome name and role
-    document.getElementById('welcomeName').textContent = Auth.name() || 'User';
-    document.getElementById('topbarRole').textContent  = Auth.role() || '';
+    document.addEventListener('DOMContentLoaded', function(){
+        initPage('dashboard.html');
+        setHero();
+        buildNavCards();
+        loadDashboard();
+    });
 
-    // Load dashboard data
-    async function loadDashboard() {
-        try {
-            const [reservations, rooms] = await Promise.all([
-                API.get('/api/reservations'),
-                API.get('/api/rooms')
-            ]);
-
-            renderStats(reservations, rooms);
-            renderRecentReservations(reservations);
-            renderRoomSummary(rooms);
-
-        } catch (err) {
-            Toast.show('Failed to load dashboard data', 'danger');
-        }
+    // ── Hero ──────────────────────────────────────────────────────
+    function setHero(){
+        var name = Auth.name() || 'User';
+        var h    = new Date().getHours();
+        var greet = h < 12 ? 'Good morning'
+            : h < 17 ? 'Good afternoon'
+                :           'Good evening';
+        document.getElementById('heroGreet').textContent =
+            greet + ', ' + name + '!';
+        document.getElementById('heroDate').textContent =
+            new Date().toLocaleDateString('en-US', {
+                weekday:'long', year:'numeric',
+                month:'long', day:'numeric'
+            });
     }
 
-    function renderStats(reservations, rooms) {
-        var confirmed  = reservations.filter(function(r){ return r.status === 'CONFIRMED'; }).length;
-        var checkedIn  = reservations.filter(function(r){ return r.status === 'CHECKED_IN'; }).length;
-        var available  = rooms.filter(function(r){ return r.roomStatus === 'AVAILABLE'; }).length;
-        var occupied   = rooms.filter(function(r){ return r.roomStatus === 'OCCUPIED'; }).length;
-        var totalRooms = rooms.length;
+    // ── Nav Cards ─────────────────────────────────────────────────
+    function buildNavCards(){
+        var role  = Auth.role();
+        var pages = [
+            { href:'reservations.html',
+                icon:'bi-calendar-check',
+                label:'Reservations', color:'#1a3c5e' },
+            { href:'guests.html',
+                icon:'bi-people',
+                label:'Guests',       color:'#2e7d32' },
+            { href:'rooms.html',
+                icon:'bi-door-open',
+                label:'Rooms',        color:'#e65100' },
+            { href:'billing.html',
+                icon:'bi-receipt',
+                label:'Billing',      color:'#1565c0' },
+            { href:'reports.html',
+                icon:'bi-bar-chart-line',
+                label:'Reports',      color:'#6a1b9a' },
+            { href:'staff.html',
+                icon:'bi-person-badge',
+                label:'Staff',        color:'#c62828',
+                admin:true }
+        ];
 
-        document.getElementById('statsRow').innerHTML = `
-    <div class="col-sm-6 col-xl-3">
-      <a href="reservations.html" class="text-decoration-none">
-        <div class="stat-card" style="cursor:pointer">
-          <div class="stat-icon blue">
-            <i class="bi bi-calendar-check"></i>
-          </div>
-          <div class="stat-info">
-            <h3>${confirmed}</h3>
-            <p>Confirmed Reservations</p>
-            <small class="text-primary">View All →</small>
-          </div>
-        </div>
-      </a>
-    </div>
-    <div class="col-sm-6 col-xl-3">
-      <a href="guests.html" class="text-decoration-none">
-        <div class="stat-card" style="cursor:pointer">
-          <div class="stat-icon green">
-            <i class="bi bi-people"></i>
-          </div>
-          <div class="stat-info">
-            <h3>${checkedIn}</h3>
-            <p>Guests Checked In</p>
-            <small class="text-success">Manage Guests →</small>
-          </div>
-        </div>
-      </a>
-    </div>
-    <div class="col-sm-6 col-xl-3">
-      <a href="rooms.html" class="text-decoration-none">
-        <div class="stat-card" style="cursor:pointer">
-          <div class="stat-icon orange">
-            <i class="bi bi-door-open"></i>
-          </div>
-          <div class="stat-info">
-            <h3>${available}</h3>
-            <p>Available Rooms</p>
-            <small class="text-warning">View Rooms →</small>
-          </div>
-        </div>
-      </a>
-    </div>
-    <div class="col-sm-6 col-xl-3">
-      <a href="rooms.html" class="text-decoration-none">
-        <div class="stat-card" style="cursor:pointer">
-          <div class="stat-icon purple">
-            <i class="bi bi-building"></i>
-          </div>
-          <div class="stat-info">
-            <h3>${occupied}/${totalRooms}</h3>
-            <p>Room Occupancy</p>
-            <small class="text-purple">View Details →</small>
-          </div>
-        </div>
-      </a>
-    </div>`;
+        document.getElementById('navCards').innerHTML =
+            pages
+                .filter(function(p){ return !p.admin || role==='admin'; })
+                .map(function(p){
+                    return '<div class="col-4 col-md-2">' +
+                        '<a href="' + p.href + '" class="nav-card"' +
+                        ' onmouseover="this.style.borderColor=\'' +
+                        p.color + '\'"' +
+                        ' onmouseout="this.style.borderColor=' +
+                        '\'transparent\'">' +
+                        '<i class="bi ' + p.icon + '"' +
+                        ' style="color:' + p.color + '"></i>' +
+                        '<span>' + p.label + '</span>' +
+                        '</a>' +
+                        '</div>';
+                }).join('');
     }
 
-    function renderRecentReservations(reservations) {
-        const recent = reservations.slice(0, 5);
-        if (recent.length === 0) {
-            document.getElementById('recentReservations').innerHTML =
-                emptyState('bi-calendar-x', 'No reservations yet');
+    // ══════════════════════════════════════════════
+    //  LOAD DASHBOARD
+    // ══════════════════════════════════════════════
+    async function loadDashboard(){
+        // Reset to loading state
+        document.getElementById('recentRes').innerHTML =
+            '<div class="text-center py-4 text-muted">' +
+            '<div class="spinner-border spinner-border-sm' +
+            ' text-primary mb-2"></div>' +
+            '<p class="mb-0 small">Loading…</p></div>';
+        document.getElementById('roomStatus').innerHTML =
+            '<div class="text-center py-4 text-muted">' +
+            '<div class="spinner-border spinner-border-sm' +
+            ' text-primary mb-2"></div>' +
+            '<p class="mb-0 small">Loading…</p></div>';
+
+        // ✅ allSettled — never crashes if one API fails
+        var results = await Promise.allSettled([
+            API.get('api/reservations'),
+            API.get('api/rooms')
+        ]);
+
+        var reservations = results[0].status === 'fulfilled' &&
+        results[0].value
+            ? results[0].value : [];
+
+        var rooms        = results[1].status === 'fulfilled' &&
+        results[1].value
+            ? results[1].value : [];
+
+        renderStats(reservations, rooms);
+        renderRecentRes(reservations);
+        renderRoomStatus(rooms);
+    }
+
+    // ══════════════════════════════════════════════
+    //  STAT CARDS
+    // ══════════════════════════════════════════════
+    function renderStats(res, rooms){
+        var confirmed = res.filter(function(r){
+            return r.status === 'CONFIRMED'; }).length;
+        var checkedIn = res.filter(function(r){
+            return r.status === 'CHECKED_IN'; }).length;
+        var available = rooms.filter(function(r){
+            return r.roomStatus === 'AVAILABLE'; }).length;
+        var occupied  = rooms.filter(function(r){
+            return r.roomStatus === 'OCCUPIED'; }).length;
+        var total     = rooms.length;
+
+        document.getElementById('statsRow').innerHTML =
+            sc('reservations.html','blue','bi-calendar-check',
+                confirmed, 'Confirmed Reservations',
+                'text-primary', res.length + ' total') +
+            sc('guests.html','green','bi-people',
+                checkedIn, 'Guests Checked In',
+                'text-success', 'View all guests') +
+            sc('rooms.html','orange','bi-door-open',
+                available, 'Available Rooms',
+                'text-warning', total + ' total rooms') +
+            sc('rooms.html','purple','bi-graph-up',
+                (total ? Math.round(occupied/total*100) : 0) + '%',
+                'Occupancy Rate',
+                'text-purple', occupied + ' occupied');
+    }
+
+    function sc(href, cls, icon, val, lbl, tcls, sub){
+        return '<div class="col-sm-6 col-xl-3">' +
+            '<a href="' + href +
+            '" class="stat-card text-decoration-none">' +
+            '<div class="stat-icon ' + cls + '">' +
+            '<i class="bi ' + icon + '"></i>' +
+            '</div>' +
+            '<div class="stat-info">' +
+            '<h3>' + val + '</h3>' +
+            '<p>' + lbl + '</p>' +
+            '<small class="' + tcls + '">' + sub + '</small>' +
+            '</div>' +
+            '</a>' +
+            '</div>';
+    }
+
+    // ══════════════════════════════════════════════
+    //  RECENT RESERVATIONS
+    // ══════════════════════════════════════════════
+    function renderRecentRes(list){
+        if (!list.length){
+            document.getElementById('recentRes').innerHTML =
+                '<div class="text-center py-4 text-muted">' +
+                '<i class="bi bi-calendar-x"' +
+                ' style="font-size:2.5rem;opacity:.3"></i>' +
+                '<p class="mt-2 mb-0">No reservations yet</p>' +
+                '</div>';
             return;
         }
 
-        document.getElementById('recentReservations').innerHTML = `
-      <div class="table-responsive">
-        <table class="table table-custom table-hover mb-0">
-          <thead>
-            <tr>
-              <th>Res. No</th>
-              <th>Guest</th>
-              <th>Room</th>
-              <th>Check-in</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${recent.map(r => `
-              <tr>
-                <td><code style="font-size:0.78rem">${r.reservationNumber}</code></td>
-                <td>${r.guestName || '-'}</td>
-                <td>${r.roomNumber || '-'}</td>
-                <td>${fmtDate(r.checkinDate)}</td>
-                <td>${statusBadge(r.status)}</td>
-              </tr>`).join('')}
-          </tbody>
-        </table>
-      </div>`;
-    }
+        // Newest first, top 6
+        var recent = list.slice().sort(function(a,b){
+            return (b.reservationId||0)-(a.reservationId||0);
+        }).slice(0,6);
 
-    function renderRoomSummary(rooms) {
-        const types = ['Single','Double','Deluxe','Suite'];
-        const colors = { Single:'blue', Double:'green', Deluxe:'orange', Suite:'purple' };
-
-        document.getElementById('roomSummary').innerHTML = types.map(type => {
-            const typeRooms = rooms.filter(r => r.typeName === type);
-            const avail     = typeRooms.filter(r => r.roomStatus === 'AVAILABLE').length;
-            const total     = typeRooms.length;
-            const pct       = total > 0 ? Math.round((avail / total) * 100) : 0;
-
-            return `
-        <div class="mb-3">
-          <div class="d-flex justify-content-between mb-1">
-            <span style="font-size:0.875rem;font-weight:500">${type}</span>
-            <span style="font-size:0.8rem;color:#666">${avail}/${total} available</span>
-          </div>
-          <div class="progress" style="height:8px;border-radius:4px">
-            <div class="progress-bar bg-success"
-                 style="width:${pct}%;border-radius:4px"></div>
-          </div>
-        </div>`;
+        var rows = recent.map(function(r){
+            return '<tr>' +
+                '<td><code style="font-size:.75rem">' +
+                r.reservationNumber + '</code></td>' +
+                '<td>' + (r.guestName  ||'—') + '</td>' +
+                '<td>' +
+                '<span class="badge bg-light text-dark border">' +
+                (r.roomNumber||'—') +
+                '</span>' +
+                '</td>' +
+                '<td>' + fmtDate(r.checkinDate) + '</td>' +
+                '<td>' + statusBadge(r.status) + '</td>' +
+                '</tr>';
         }).join('');
+
+        document.getElementById('recentRes').innerHTML =
+            '<div class="table-responsive">' +
+            '<table class="table table-hover mb-0">' +
+            '<thead><tr>' +
+            '<th>Res. No</th><th>Guest</th><th>Room</th>' +
+            '<th>Check-in</th><th>Status</th>' +
+            '</tr></thead>' +
+            '<tbody>' + rows + '</tbody>' +
+            '</table></div>';
     }
 
-    loadDashboard();
+    // ══════════════════════════════════════════════
+    //  ROOM STATUS
+    // ══════════════════════════════════════════════
+    function renderRoomStatus(rooms){
+        if (!rooms.length){
+            document.getElementById('roomStatus').innerHTML =
+                '<div class="text-center py-4 text-muted">' +
+                '<i class="bi bi-door-closed"' +
+                ' style="font-size:2.5rem;opacity:.3"></i>' +
+                '<p class="mt-2 mb-0">No rooms found</p>' +
+                '</div>';
+            return;
+        }
+
+        var avail = rooms.filter(function(r){
+            return r.roomStatus==='AVAILABLE'; }).length;
+        var occ   = rooms.filter(function(r){
+            return r.roomStatus==='OCCUPIED'; }).length;
+        var maint = rooms.filter(function(r){
+            return r.roomStatus==='MAINTENANCE'; }).length;
+
+        var types  = ['Single','Double','Deluxe','Suite'];
+        var colors = ['#1565c0','#2e7d32','#e65100','#6a1b9a'];
+
+        var html =
+            // Summary row
+            '<div class="occupancy-summary">' +
+            '<div class="row g-0">' +
+            occCol(avail, 'Available', '#198754') +
+            occCol(occ,   'Occupied',  '#e65100') +
+            occCol(maint, 'Maint.',    '#dc3545') +
+            occCol(rooms.length, 'Total', '#1a3c5e') +
+            '</div></div>';
+
+        // Per type progress
+        types.forEach(function(t, i){
+            var tr  = rooms.filter(function(r){
+                return (r.typeName||'')=== t; });
+            if (!tr.length) return;
+            var av  = tr.filter(function(r){
+                return r.roomStatus==='AVAILABLE'; }).length;
+            var pct = Math.round(av/tr.length*100);
+            html +=
+                '<div class="room-row">' +
+                '<div class="room-row-label">' +
+                '<span class="fw-500">' + t + '</span>' +
+                '<span class="text-muted">' +
+                av + '/' + tr.length + ' available' +
+                '</span>' +
+                '</div>' +
+                '<div class="progress">' +
+                '<div class="progress-bar"' +
+                ' style="width:' + pct + '%;' +
+                'background:' + colors[i] + '">' +
+                '</div>' +
+                '</div>' +
+                '</div>';
+        });
+
+        document.getElementById('roomStatus').innerHTML = html;
+    }
+
+    function occCol(val, lbl, color){
+        return '<div class="col-3 occ-col">' +
+            '<span class="occ-val"' +
+            ' style="color:' + color + '">' + val + '</span>' +
+            '<span class="occ-lbl">' + lbl + '</span>' +
+            '</div>';
+    }
 </script>
 </body>
 </html>
-<!--```-->
-
-<!-- -&#45;&#45;-->
-
-<!--## ✅ What You Have Now-->
-<!--```-->
-<!--web/-->
-<!--├── css/-->
-<!--│   └── style.css       ✅ Complete styling-->
-<!--├── js/-->
-<!--│   └── app.js          ✅ API + Auth + Toast + Helpers-->
-<!--├── index.html          ✅ Login page-->
-<!--└── dashboard.html      ✅ Dashboard with stats-->
