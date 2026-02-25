@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Reservations — Hotel System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        :root { --primary:#1a3c5e; --accent:#e8a020; --sidebar:250px; }
+
+        * { box-sizing: border-box; }
+
+        body {
+            background: #f0f4f8;
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0; padding: 0;
+        }
+
+        /* ── Sidebar ───────────────────────────────── */
+        .sidebar {
+            position: fixed;
+            top: 0; left: 0;
+            width: var(--sidebar);
+            height: 100vh;
+            background: var(--primary);
+            z-index: 1000;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar .nav-link {
+            color: rgba(255,255,255,.75);
+            padding: .65rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: .75rem;
+            font-size: .9rem;
+            border-left: 3px solid transparent;
+            transition: all .2s;
+            text-decoration: none;
+        }
+        .sidebar .nav-link:hover,
+        .sidebar .nav-link.active {
+            background: rgba(255,255,255,.12);
+            color: #fff;
+            border-left-color: var(--accent);
+        }
+
+        /* ── Layout ────────────────────────────────── */
+        .main-content {
+            margin-left: var(--sidebar);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── Topbar ────────────────────────────────── */
+        .topbar {
+            background: #fff;
+            padding: .875rem 1.5rem;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 999;
+            flex-shrink: 0;
+        }
+
+        /* ── Content area ──────────────────────────── */
+        .content-area {
+            padding: 1.5rem;
+            flex: 1;
+        }
+
+        /* ── Card box ──────────────────────────────── */
+        .card-box {
+            background: #fff;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,.06);
+        }
+
+        /* ── Stat box ──────────────────────────────── */
+        .stat-box {
+            background: #fff;
+            border-radius: 12px;
+            padding: 1.1rem 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,.06);
+            height: 100%;
+        }
+        .stat-ic {
+            width: 48px; height: 48px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            flex-shrink: 0;
+        }
+
+        /* ── Table ─────────────────────────────────── */
+        .table thead th {
+            background: #f8fafc;
+            color: #555;
+            font-size: .78rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            border-bottom: 2px solid #e0e0e0;
+            white-space: nowrap;
+        }
+        .table tbody td {
+            vertical-align: middle;
+            font-size: .875rem;
+            border-color: #f0f0f0;
+        }
+        .table tbody tr:hover { background: #f8faff; }
+
+        /* ── Modal ─────────────────────────────────── */
+        .modal-header {
+            background: var(--primary);
+            color: #fff;
+            border-radius: 12px 12px 0 0;
+        }
+        .modal-header .btn-close { filter: invert(1); }
+        .modal-content { border-radius: 12px; border: none; }
+
+        /* ── Buttons ───────────────────────────────── */
+        .btn-hotel {
+            background: linear-gradient(135deg,#1a3c5e,#2e6da4);
+            color: #fff; border: none;
+            border-radius: 8px; font-weight: 500;
+        }
+        .btn-hotel:hover {
+            background: linear-gradient(135deg,#152f4a,#245a8a);
+            color: #fff;
+        }
+        .btn-hotel:disabled { opacity: .65; }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #2e6da4;
+            box-shadow: 0 0 0 .2rem rgba(46,109,164,.2);
+        }
+
+        /* ── Step bar ──────────────────────────────── */
+        .step-bar { display: flex; margin-bottom: 1.5rem; }
+        .step-item {
+            flex: 1; text-align: center;
+            padding: .6rem .4rem;
+            background: #f0f4f8;
+            border: 1px solid #dee2e6;
+            font-size: .8rem; font-weight: 500; color: #aaa;
+        }
+        .step-item:first-child { border-radius: 8px 0 0 8px; }
+        .step-item:last-child  { border-radius: 0 8px 8px 0; }
+        .step-item.active {
+            background: var(--primary); color: #fff;
+            border-color: var(--primary);
+        }
+        .step-item.done {
+            background: #198754; color: #fff;
+            border-color: #198754;
+        }
+
+        /* ── Room card ─────────────────────────────── */
+        .room-card {
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: .75rem 1rem;
+            cursor: pointer;
+            transition: all .2s;
+        }
+        .room-card:hover    { border-color: #2e6da4; background: #f0f8ff; }
+        .room-card.selected {
+            border-color: var(--primary); background: #e8f0fe;
+        }
+
+        /* ── Responsive ────────────────────────────── */
+        @media (max-width: 768px) {
+            .sidebar       { transform: translateX(-100%); }
+            .main-content  { margin-left: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar"></div>
+
+<!-- MAIN -->
+<div class="main-content">
+
+    <!-- Topbar -->
+    <div class="topbar">
+        <div class="d-flex align-items-center gap-3">
+            <a href="dashboard.html"
+               class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Dashboard
+            </a>
+            <h5 class="mb-0" style="color:var(--primary);font-weight:600">
+                <i class="bi bi-calendar-check me-2"></i>Reservations
+            </h5>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+      <span class="text-muted" style="font-size:.85rem">
+        <i class="bi bi-person-circle me-1"></i>
+        <span id="topbarUser"></span>
+      </span>
+            <span class="badge bg-secondary" id="topbarRole"></span>
+        </div>
+    </div>
+
+    <!-- Content -->
+    <div class="content-area">
+
+        <!-- Stats Row -->
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-xl-3">
+                <div class="stat-box">
+                    <div class="stat-ic"
+                         style="background:#e3f2fd;color:#1565c0">
+                        <i class="bi bi-calendar-check"></i>
+                    </div>
+                    <div>
+                        <div class="fs-4 fw-bold" id="st-total">—</div>
+                        <div class="text-muted" style="font-size:.78rem">
+                            Total
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-xl-3">
+                <div class="stat-box">
+                    <div class="stat-ic"
+                         style="background:#e8f5e9;color:#2e7d32">
+                        <i class="bi bi-check-circle"></i>
+                    </div>
+                    <div>
+                        <div class="fs-4 fw-bold" id="st-confirmed">—</div>
+                        <div class="text-muted" style="font-size:.78rem">
+                            Confirmed
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-xl-3">
+                <div class="stat-box">
+                    <div class="stat-ic"
+                         style="background:#fff3e0;color:#e65100">
+                        <i class="bi bi-person-check"></i>
+                    </div>
+                    <div>
+                        <div class="fs-4 fw-bold" id="st-checkedin">—</div>
+                        <div class="text-muted" style="font-size:.78rem">
+                            Checked In
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-xl-3">
+                <div class="stat-box">
+                    <div class="stat-ic"
+                         style="background:#fce4ec;color:#c62828">
+                        <i class="bi bi-x-circle"></i>
+                    </div>
+                    <div>
+                        <div class="fs-4 fw-bold" id="st-cancelled">—</div>
+                        <div class="text-muted" style="font-size:.78rem">
+                            Cancelled
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table Card -->
+        <div class="card-box">
+            <div class="d-flex flex-wrap align-items-center
+                  justify-content-between gap-2 mb-3">
+                <h6 class="mb-0"
+                    style="color:var(--primary);font-weight:600">
+                    <i class="bi bi-list-ul me-2"></i>All Reservations
+                </h6>
+                <button type="button"
+                        class="btn btn-hotel btn-sm px-3"
+                        onclick="openAdd()">
+                    <i class="bi bi-plus-lg me-1"></i>New Reservation
+                </button>
+            </div>
+
+            <!-- Filters -->
+            <div class="row g-2 mb-3">
+                <div class="col-md-5">
+                    <div class="input-group input-group-sm">
+            <span class="input-group-text bg-white">
+              <i class="bi bi-search text-muted"></i>
+            </span>
+                        <input type="text" id="searchInput"
+                               class="form-control"
+                               placeholder="Search guest, room, res.no…"
+                               oninput="doFilter()">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select id="statusFilter"
+                            class="form-select form-select-sm"
+                            onchange="doFilter()">
+                        <option value="">All Statuses</option>
+                        <option value="CONFIRMED">Confirmed</option>
+                        <option value="CHECKED_IN">Checked In</option>
+                        <option value="CHECKED_OUT">Checked Out</option>
+                        <option value="CANCELLED">Cancelled</option>
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <button type="button"
+                            class="btn btn-outline-secondary btn-sm"
+                            onclick="loadAll()">
+                        <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                    </button>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div id="tableWrap">
+                <div class="text-center py-5 text-muted">
+                    <div class="spinner-border text-primary mb-2"></div>
+                    <p class="mb-0">Loading…</p>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between mt-2"
+                 style="font-size:.8rem;color:#999">
+                <span id="tblInfo"></span>
+                <span id="tblFilter"></span>
+            </div>
+        </div>
+
+    </div><!-- /content-area -->
+</div><!-- /main-content -->
+
+<!-- ══════════ ADD MODAL ══════════ -->
+<div class="modal fade" id="addModal" tabindex="-1"
+     data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-lg modal-dialog-centered
+              modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-plus-circle me-2"></i>New Reservation
+                </h5>
+                <button type="button" class="btn-close"
+                        onclick="closeAdd()"></button>
+            </div>
+            <div class="modal-body">
+
+                <!-- step bar -->
+                <div class="step-bar">
+                    <div class="step-item active" id="ind1">
+                        <strong>1</strong> Guest
+                    </div>
+                    <div class="step-item" id="ind2">
+                        <strong>2</strong> Room &amp; Dates
+                    </div>
+                    <div class="step-item" id="ind3">
+                        <strong>3</strong> Confirm
+                    </div>
+                </div>
+
+                <!-- STEP 1 -->
+                <div id="s1">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">
+                                Guest Name <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" id="f_name" class="form-control"
+                                   placeholder="Full name">
+                            <div class="invalid-feedback">
+                                At least 2 characters.
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">
+                                Contact <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" id="f_contact"
+                                   class="form-control"
+                                   placeholder="+94771234567">
+                            <div class="invalid-feedback">
+                                7–15 digits.
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Email</label>
+                            <input type="text" id="f_email"
+                                   class="form-control"
+                                   placeholder="guest@email.com">
+                            <div class="invalid-feedback">Invalid email.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Address</label>
+                            <input type="text" id="f_address"
+                                   class="form-control"
+                                   placeholder="Street, City">
+                        </div>
+                    </div>
+
+                    <div class="mt-3 p-3 rounded"
+                         style="background:#f8fafc;border:1px dashed #ccc">
+                        <p class="mb-2 text-muted" style="font-size:.83rem">
+                            <i class="bi bi-search me-1"></i>
+                            Search existing guest by contact:
+                        </p>
+                        <div class="input-group input-group-sm">
+                            <input type="text" id="srchC" class="form-control"
+                                   placeholder="Contact number">
+                            <button type="button"
+                                    class="btn btn-outline-primary"
+                                    onclick="srchGuest()">
+                                Find
+                            </button>
+                        </div>
+                        <div id="srchResult" class="mt-2"></div>
+                    </div>
+
+                    <div class="text-end mt-3">
+                        <button type="button" class="btn btn-hotel px-4"
+                                onclick="toS2()">
+                            Next <i class="bi bi-arrow-right ms-1"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- STEP 2 -->
+                <div id="s2" class="d-none">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">
+                                Room Type <span class="text-danger">*</span>
+                            </label>
+                            <select id="f_type" class="form-select">
+                                <option value="">Select…</option>
+                                <option>Single</option>
+                                <option>Double</option>
+                                <option>Deluxe</option>
+                                <option>Suite</option>
+                            </select>
+                            <div class="invalid-feedback">
+                                Select a room type.
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">
+                                Check-in <span class="text-danger">*</span>
+                            </label>
+                            <input type="date" id="f_cin" class="form-control"
+                                   onchange="onDate()">
+                            <div class="invalid-feedback">Required.</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">
+                                Check-out <span class="text-danger">*</span>
+                            </label>
+                            <input type="date" id="f_cout" class="form-control"
+                                   onchange="onDate()">
+                            <div class="invalid-feedback">
+                                Must be after check-in.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="nightsInfo" class="alert alert-info py-2 d-none"
+                         style="font-size:.85rem">
+                        <i class="bi bi-moon-stars me-1"></i>
+                        <span id="nightsText"></span>
+                    </div>
+
+                    <div class="text-center mb-3">
+                        <button type="button"
+                                class="btn btn-outline-primary px-4"
+                                onclick="checkAvail()">
+                            <i class="bi bi-search me-1"></i>
+                            Check Availability
+                        </button>
+                    </div>
+
+                    <div id="availResult"></div>
+
+                    <div class="d-flex justify-content-between mt-3">
+                        <button type="button"
+                                class="btn btn-outline-secondary"
+                                onclick="goS(1)">
+                            <i class="bi bi-arrow-left me-1"></i>Back
+                        </button>
+                        <button type="button" id="btnS2Next"
+                                class="btn btn-hotel px-4"
+                                onclick="toS3()" disabled>
+                            Next <i class="bi bi-arrow-right ms-1"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- STEP 3 -->
+                <div id="s3" class="d-none">
+                    <h6 class="fw-semibold mb-3"
+                        style="color:var(--primary)">
+                        <i class="bi bi-clipboard-check me-2"></i>
+                        Confirm Details
+                    </h6>
+                    <div class="table-responsive mb-3">
+                        <table class="table table-bordered mb-0"
+                               style="font-size:.875rem">
+                            <tbody id="confRows"></tbody>
+                        </table>
+                    </div>
+                    <div class="alert alert-warning py-2"
+                         style="font-size:.82rem">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Review all details before confirming.
+                    </div>
+                    <div id="subErr" class="alert alert-danger d-none py-2"
+                         style="font-size:.85rem"></div>
+
+                    <div class="d-flex justify-content-between mt-3">
+                        <button type="button"
+                                class="btn btn-outline-secondary"
+                                onclick="goS(2)">
+                            <i class="bi bi-arrow-left me-1"></i>Back
+                        </button>
+                        <button type="button" id="btnConf"
+                                class="btn btn-hotel px-4"
+                                onclick="submitRes()">
+              <span id="btnConfText">
+                <i class="bi bi-check-circle me-1"></i>
+                Confirm Reservation
+              </span>
+                            <span id="btnConfSpin" class="d-none">
+                <span class="spinner-border
+                             spinner-border-sm me-1"></span>
+                Saving…
+              </span>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════ VIEW MODAL ══════════ -->
+<div class="modal fade" id="viewModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-eye me-2"></i>Details
+                </h5>
+                <button type="button" class="btn-close"
+                        data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="viewBody"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary"
+                        data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════ UPDATE MODAL ══════════ -->
+<div class="modal fade" id="updateModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-pencil me-2"></i>Update Reservation
+                </h5>
+                <button type="button" class="btn-close"
+                        data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted mb-3" style="font-size:.875rem">
+                    Updating: <strong id="upd_no"></strong>
+                </p>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Status</label>
+                    <select id="upd_status" class="form-select">
+                        <option value="CONFIRMED">Confirmed</option>
+                        <option value="CHECKED_IN">Checked In</option>
+                        <option value="CHECKED_OUT">Checked Out</option>
+                    </select>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label fw-semibold">
+                        Check-out Date
+                    </label>
+                    <input type="date" id="upd_cout" class="form-control">
+                </div>
+                <div id="updErr" class="alert alert-danger d-none py-2"
+                     style="font-size:.85rem"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary"
+                        data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-hotel"
+                        onclick="submitUpdate()">
+                    <i class="bi bi-check-circle me-1"></i>Update
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════ CANCEL MODAL ══════════ -->
+<div class="modal fade" id="cancelModal" tabindex="-1">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header"
+                 style="background:#dc3545;color:#fff;
+                  border-radius:12px 12px 0 0">
+                <h5 class="modal-title">Cancel Reservation</h5>
+                <button type="button"
+                        class="btn-close btn-close-white"
+                        data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <i class="bi bi-x-circle text-danger"
+                   style="font-size:3rem"></i>
+                <p class="mt-3 mb-1">Cancel reservation</p>
+                <strong id="can_no"></strong>
+                <p class="text-muted mt-2"
+                   style="font-size:.82rem">
+                    This cannot be undone.
+                </p>
+                <div id="canErr"
+                     class="alert alert-danger d-none py-2"
+                     style="font-size:.85rem"></div>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-secondary"
+                        data-bs-dismiss="modal">Keep It</button>
+                <button type="button" class="btn btn-danger"
+                        onclick="submitCancel()">
+                    Yes, Cancel It
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/app.js"></script>
+<script>
+    'use strict';
+
+    var allRes  = [];
+    var selRoom = null;
+    var actNo   = '';
+
+    // ── Get modal instance safely ─────────────────────────────────
+    function getModal(id){
+        return bootstrap.Modal.getOrCreateInstance(
+            document.getElementById(id));
+    }
+
+    document.addEventListener('DOMContentLoaded', function(){
+        initPage('reservations.html');
+        var today = new Date().toISOString().split('T')[0];
+        document.getElementById('f_cin').min  = today;
+        document.getElementById('f_cout').min = today;
+        loadAll();
+    });
+
+    // ══════════════════════════════════════════════
+    //  LOAD ALL
+    // ══════════════════════════════════════════════
+    async function loadAll(){
+        document.getElementById('tableWrap').innerHTML =
+            '<div class="text-center py-5 text-muted">' +
+            '<div class="spinner-border text-primary mb-2"></div>' +
+            '<p class="mb-0">Loading…</p></div>';
+        try {
+            var data = await API.get('api/reservations');
+            if (data === null) return;
+            allRes = Array.isArray(data) ? data : [];
+            updateStats(allRes);
+            renderTable(allRes);
+        } catch(err){
+            document.getElementById('tableWrap').innerHTML =
+                '<div class="text-center py-5 text-danger">' +
+                '<i class="bi bi-exclamation-triangle"' +
+                ' style="font-size:2.5rem"></i>' +
+                '<p class="mt-2 fw-semibold">Failed to load</p>' +
+                '<p class="text-muted" style="font-size:.85rem">' +
+                err.message + '</p>' +
+                '<button type="button"' +
+                ' class="btn btn-outline-primary btn-sm mt-1"' +
+                ' onclick="loadAll()">' +
+                '<i class="bi bi-arrow-clockwise me-1"></i>Retry' +
+                '</button></div>';
+        }
+    }
+
+    function updateStats(list){
+        document.getElementById('st-total').textContent =
+            list.length;
+        document.getElementById('st-confirmed').textContent =
+            list.filter(function(r){
+                return r.status==='CONFIRMED';}).length;
+        document.getElementById('st-checkedin').textContent =
+            list.filter(function(r){
+                return r.status==='CHECKED_IN';}).length;
+        document.getElementById('st-cancelled').textContent =
+            list.filter(function(r){
+                return r.status==='CANCELLED';}).length;
+    }
+
+    function renderTable(list){
+        if (!list.length){
+            document.getElementById('tableWrap').innerHTML =
+                emptyState('bi-calendar-x','No reservations found');
+            document.getElementById('tblInfo').textContent = '';
+            return;
+        }
+        var rows = list.map(function(r){
+            var canUpd = r.status!=='CANCELLED' &&
+                r.status!=='CHECKED_OUT';
+            var canCan = r.status==='CONFIRMED' ||
+                r.status==='CHECKED_IN';
+            return '<tr>' +
+                '<td><code style="font-size:.78rem">' +
+                r.reservationNumber + '</code></td>' +
+                '<td>' + (r.guestName||'—') + '</td>' +
+                '<td><span class="badge bg-light text-dark border">' +
+                (r.roomNumber||'—') + '</span></td>' +
+                '<td>' + fmtDate(r.checkinDate)  + '</td>' +
+                '<td>' + fmtDate(r.checkoutDate) + '</td>' +
+                '<td>' + statusBadge(r.status)   + '</td>' +
+                '<td>' +
+                '<div class="d-flex gap-1">' +
+                '<button type="button"' +
+                ' class="btn btn-sm btn-outline-primary"' +
+                ' title="View"' +
+                ' onclick="viewRes(\'' +
+                r.reservationNumber + '\')">' +
+                '<i class="bi bi-eye"></i></button>' +
+                (canUpd
+                    ? '<button type="button"' +
+                    ' class="btn btn-sm btn-outline-warning"' +
+                    ' title="Update"' +
+                    ' onclick="openUpdate(\'' +
+                    r.reservationNumber + '\',\'' +
+                    r.status + '\',\'' +
+                    (r.checkoutDate||'') + '\')">' +
+                    '<i class="bi bi-pencil"></i></button>'
+                    : '') +
+                (canCan
+                    ? '<button type="button"' +
+                    ' class="btn btn-sm btn-outline-danger"' +
+                    ' title="Cancel"' +
+                    ' onclick="openCancel(\'' +
+                    r.reservationNumber + '\')">' +
+                    '<i class="bi bi-x-circle"></i></button>'
+                    : '') +
+                '</div>' +
+                '</td></tr>';
+        }).join('');
+
+        document.getElementById('tableWrap').innerHTML =
+            '<div class="table-responsive">' +
+            '<table class="table table-hover mb-0"><thead><tr>' +
+            '<th>Res. No</th><th>Guest</th><th>Room</th>' +
+            '<th>Check-in</th><th>Check-out</th>' +
+            '<th>Status</th><th style="width:120px">Actions</th>' +
+            '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+
+        document.getElementById('tblInfo').textContent =
+            'Showing ' + list.length + ' of ' +
+            allRes.length + ' reservations';
+    }
+
+    function doFilter(){
+        var q = document.getElementById('searchInput')
+            .value.toLowerCase();
+        var s = document.getElementById('statusFilter').value;
+        var f = allRes.filter(function(r){
+            var mq = !q ||
+                (r.reservationNumber||'').toLowerCase().includes(q)||
+                (r.guestName        ||'').toLowerCase().includes(q)||
+                (r.roomNumber       ||'').toLowerCase().includes(q);
+            var ms = !s || r.status===s;
+            return mq && ms;
+        });
+        renderTable(f);
+        document.getElementById('tblFilter').textContent =
+            f.length!==allRes.length ? f.length+' matched' : '';
+    }
+
+    // ══════════════════════════════════════════════
+    //  VIEW
+    // ══════════════════════════════════════════════
+    async function viewRes(no){
+        document.getElementById('viewBody').innerHTML =
+            '<div class="text-center py-4">' +
+            '<div class="spinner-border text-primary"></div></div>';
+        getModal('viewModal').show();
+        try {
+            var r = await API.get('api/reservations/' + no);
+            if (!r) return;
+            var n = nights(r.checkinDate, r.checkoutDate);
+            document.getElementById('viewBody').innerHTML =
+                mkTable([
+                    ['Reservation No',
+                        '<code>' + r.reservationNumber + '</code>'],
+                    ['Status',    statusBadge(r.status)],
+                    ['Guest',     r.guestName  || '—'],
+                    ['Room',      r.roomNumber || '—'],
+                    ['Check-in',  fmtDate(r.checkinDate)],
+                    ['Check-out', fmtDate(r.checkoutDate)],
+                    ['Duration',  n + ' night' + (n!==1?'s':'')],
+                    ['Booked By', r.staffName  || '—']
+                ]);
+        } catch(err){
+            document.getElementById('viewBody').innerHTML =
+                '<div class="text-danger p-3">' + err.message + '</div>';
+        }
+    }
+
+    // ══════════════════════════════════════════════
+    //  ADD — MULTI STEP
+    // ══════════════════════════════════════════════
+    function openAdd(){
+        resetForm();
+        goS(1);
+        getModal('addModal').show();
+    }
+
+    function closeAdd(){
+        getModal('addModal').hide();
+        resetForm();
+    }
+
+    function resetForm(){
+        ['f_name','f_contact','f_email','f_address','srchC']
+            .forEach(function(id){
+                var el = document.getElementById(id);
+                if (el){
+                    el.value = '';
+                    el.classList.remove('is-invalid','is-valid');
+                }
+            });
+        ['f_type','f_cin','f_cout']
+            .forEach(function(id){
+                var el = document.getElementById(id);
+                if (el){
+                    el.value = '';
+                    el.classList.remove('is-invalid','is-valid');
+                }
+            });
+        document.getElementById('availResult').innerHTML = '';
+        document.getElementById('srchResult').innerHTML  = '';
+        document.getElementById('nightsInfo')
+            .classList.add('d-none');
+        document.getElementById('subErr')
+            .classList.add('d-none');
+        document.getElementById('btnS2Next').disabled = true;
+        selRoom = null;
+    }
+
+    function goS(n){
+        for (var i=1; i<=3; i++){
+            var el  = document.getElementById('s'+i);
+            var ind = document.getElementById('ind'+i);
+            el.classList.toggle('d-none', i!==n);
+            ind.classList.remove('active','done');
+            if (i < n) ind.classList.add('done');
+            if (i === n) ind.classList.add('active');
+        }
+    }
+
+    function toS2(){
+        var name    = gv('f_name').trim();
+        var contact = gv('f_contact').trim();
+        var email   = gv('f_email').trim();
+        var ok      = true;
+        ok = vf('f_name',    name.length>=2,       ok);
+        ok = vf('f_contact',
+            /^[0-9+\-]{7,15}$/.test(contact), ok);
+        if (email){
+            ok = vf('f_email',
+                /^[\w.+\-]+@[\w\-]+\.[a-zA-Z]{2,}$/.test(email), ok);
+        }
+        if (ok) goS(2);
+    }
+
+    async function srchGuest(){
+        var c = gv('srchC').trim();
+        if (!c){ Toast.show('Enter contact number','warning'); return; }
+        document.getElementById('srchResult').innerHTML =
+            '<small class="text-muted">Searching…</small>';
+        try {
+            var list = await API.get('api/guests');
+            if (!list) return;
+            var found = list.find(function(g){
+                return g.contactNumber === c;
+            });
+            if (found){
+                document.getElementById('f_name').value    =
+                    found.guestName     || '';
+                document.getElementById('f_contact').value =
+                    found.contactNumber || '';
+                document.getElementById('f_email').value   =
+                    found.email         || '';
+                document.getElementById('f_address').value =
+                    found.address       || '';
+                document.getElementById('srchResult').innerHTML =
+                    '<div class="alert alert-success py-1 px-2 mb-0"' +
+                    ' style="font-size:.8rem">' +
+                    '<i class="bi bi-check-circle me-1"></i>' +
+                    'Found: <strong>' + found.guestName + '</strong></div>';
+            } else {
+                document.getElementById('srchResult').innerHTML =
+                    '<div class="alert alert-warning py-1 px-2 mb-0"' +
+                    ' style="font-size:.8rem">' +
+                    'Not found — new guest will be created.</div>';
+            }
+        } catch(err){
+            document.getElementById('srchResult').innerHTML =
+                '<small class="text-danger">' + err.message + '</small>';
+        }
+    }
+
+    function onDate(){
+        var cin  = gv('f_cin');
+        var cout = gv('f_cout');
+        selRoom  = null;
+        document.getElementById('btnS2Next').disabled = true;
+        document.getElementById('availResult').innerHTML = '';
+        if (!cin || !cout) return;
+        var n = nights(cin, cout);
+        if (n > 0){
+            document.getElementById('nightsText').textContent =
+                n + ' night' + (n!==1?'s':'') + ' stay';
+            document.getElementById('nightsInfo')
+                .classList.remove('d-none');
+            var nd = new Date(cin);
+            nd.setDate(nd.getDate()+1);
+            document.getElementById('f_cout').min =
+                nd.toISOString().split('T')[0];
+        } else {
+            document.getElementById('nightsInfo')
+                .classList.add('d-none');
+        }
+    }
+
+    async function checkAvail(){
+        var type = gv('f_type');
+        var cin  = gv('f_cin');
+        var cout = gv('f_cout');
+        var ok   = true;
+        ok = vf('f_type', type!=='', ok);
+        ok = vf('f_cin',  cin!=='',  ok);
+        ok = vf('f_cout', cout!=='' && cout>cin, ok);
+        if (!ok) return;
+
+        selRoom = null;
+        document.getElementById('btnS2Next').disabled = true;
+        document.getElementById('availResult').innerHTML =
+            '<div class="text-center py-3">' +
+            '<div class="spinner-border spinner-border-sm' +
+            ' text-primary me-2"></div>' +
+            'Checking availability…</div>';
+
+        try {
+            var rooms = await API.get(
+                'api/rooms/available?type=' +
+                encodeURIComponent(type) +
+                '&checkin=' + cin + '&checkout=' + cout);
+
+            if (rooms === null) return;
+
+            if (!rooms.length){
+                document.getElementById('availResult').innerHTML =
+                    '<div class="alert alert-warning">' +
+                    '<i class="bi bi-exclamation-triangle me-2"></i>' +
+                    'No <strong>' + type + '</strong> rooms available.' +
+                    ' Try different dates or type.</div>';
+                return;
+            }
+
+            var cards = rooms.map(function(r, idx){
+                return '<div class="col-md-6 col-lg-4">' +
+                    '<div class="room-card" id="rc' + idx + '"' +
+                    ' onclick="pickRoom(this,' + idx + ',' +
+                    encodeRoomData(r) + ')">' +
+                    '<div class="d-flex justify-content-between' +
+                    ' align-items-center">' +
+                    '<div><div class="fw-600">Room ' +
+                    r.roomNumber + '</div>' +
+                    '<small class="text-muted">Floor ' +
+                    r.floorNumber + ' · ' +
+                    (r.typeName||type) + '</small></div>' +
+                    '<span class="badge bg-success">Available</span>' +
+                    '</div></div></div>';
+            }).join('');
+
+            document.getElementById('availResult').innerHTML =
+                '<p class="mb-2 fw-semibold text-success"' +
+                ' style="font-size:.875rem">' +
+                '<i class="bi bi-check-circle me-1"></i>' +
+                rooms.length + ' room(s) available — click to select:</p>' +
+                '<div class="row g-2">' + cards + '</div>';
+
+        } catch(err){
+            document.getElementById('availResult').innerHTML =
+                '<div class="alert alert-danger">' +
+                err.message + '</div>';
+        }
+    }
+
+    // Store rooms data globally to avoid JSON in onclick
+    var _rooms = {};
+    function encodeRoomData(r){
+        var key = 'r_' + r.roomNumber;
+        _rooms[key] = r;
+        return "'" + key + "'";
+    }
+
+    function pickRoom(el, idx, key){
+        document.querySelectorAll('.room-card')
+            .forEach(function(c){ c.classList.remove('selected'); });
+        el.classList.add('selected');
+        selRoom = _rooms[key];
+        document.getElementById('btnS2Next').disabled = false;
+        Toast.show('Room ' + selRoom.roomNumber +
+            ' selected', 'info', 2000);
+    }
+
+    function toS3(){
+        if (!selRoom){
+            Toast.show('Please select a room','warning'); return;
+        }
+        var n = nights(gv('f_cin'), gv('f_cout'));
+        document.getElementById('confRows').innerHTML =
+            cr('Guest',    gv('f_name'))  +
+            cr('Contact',  gv('f_contact')) +
+            cr('Email',    gv('f_email')   || '—') +
+            cr('Address',  gv('f_address') || '—') +
+            cr('Room',
+                'Room ' + selRoom.roomNumber +
+                ' (Floor ' + selRoom.floorNumber + ')') +
+            cr('Type',     gv('f_type')) +
+            cr('Check-in', fmtDate(gv('f_cin'))) +
+            cr('Check-out',fmtDate(gv('f_cout'))) +
+            cr('Duration', n + ' night' + (n!==1?'s':''));
+        document.getElementById('subErr')
+            .classList.add('d-none');
+        goS(3);
+    }
+
+    async function submitRes(){
+        setBL('btnConf','btnConfText','btnConfSpin', true);
+        document.getElementById('subErr').classList.add('d-none');
+        try {
+            var payload = {
+                guestName    : gv('f_name').trim(),
+                contactNumber: gv('f_contact').trim(),
+                email        : gv('f_email').trim(),
+                address      : gv('f_address').trim(),
+                roomType     : gv('f_type'),
+                checkinDate  : gv('f_cin'),
+                checkoutDate : gv('f_cout')
+            };
+            var data = await API.post('api/reservations', payload);
+            if (!data) return;
+
+            closeAdd();
+            Toast.show(
+                '✅ Reservation ' + data.reservationNumber +
+                ' confirmed!', 'success', 5000);
+            loadAll();
+
+        } catch(err){
+            var e = document.getElementById('subErr');
+            e.textContent = err.message;
+            e.classList.remove('d-none');
+        } finally {
+            setBL('btnConf','btnConfText','btnConfSpin', false);
+        }
+    }
+
+    // ══════════════════════════════════════════════
+    //  UPDATE
+    // ══════════════════════════════════════════════
+    function openUpdate(no, status, cout){
+        actNo = no;
+        document.getElementById('upd_no').textContent  = no;
+        document.getElementById('upd_status').value    = status;
+        document.getElementById('upd_cout').value      = cout || '';
+        document.getElementById('updErr')
+            .classList.add('d-none');
+        getModal('updateModal').show();
+    }
+
+    async function submitUpdate(){
+        document.getElementById('updErr').classList.add('d-none');
+        try {
+            var d = await API.put('api/reservations/' + actNo, {
+                status      : document.getElementById('upd_status').value,
+                checkoutDate: document.getElementById('upd_cout').value
+            });
+            if (!d) return;
+            getModal('updateModal').hide();
+            Toast.show('Reservation updated','success');
+            loadAll();
+        } catch(err){
+            var e = document.getElementById('updErr');
+            e.textContent = err.message;
+            e.classList.remove('d-none');
+        }
+    }
+
+    // ══════════════════════════════════════════════
+    //  CANCEL
+    // ══════════════════════════════════════════════
+    function openCancel(no){
+        actNo = no;
+        document.getElementById('can_no').textContent = no;
+        document.getElementById('canErr').classList.add('d-none');
+        getModal('cancelModal').show();
+    }
+
+    async function submitCancel(){
+        document.getElementById('canErr').classList.add('d-none');
+        try {
+            var d = await API.del('api/reservations/' + actNo);
+            if (!d) return;
+            getModal('cancelModal').hide();
+            Toast.show('Reservation cancelled','warning');
+            loadAll();
+        } catch(err){
+            var e = document.getElementById('canErr');
+            e.textContent = err.message;
+            e.classList.remove('d-none');
+        }
+    }
+
+    // ══════════════════════════════════════════════
+    //  HELPERS
+    // ══════════════════════════════════════════════
+    function gv(id){
+        var el = document.getElementById(id);
+        return el ? el.value : '';
+    }
+
+    function nights(cin, cout){
+        if (!cin || !cout) return 0;
+        return Math.max(0,
+            Math.floor((new Date(cout)-new Date(cin))/86400000));
+    }
+
+    function vf(id, cond, cur){
+        var el = document.getElementById(id);
+        if (!el) return cur;
+        if (cond){
+            el.classList.remove('is-invalid');
+            el.classList.add('is-valid');
+            return cur;
+        }
+        el.classList.add('is-invalid');
+        el.classList.remove('is-valid');
+        return false;
+    }
+
+    function setBL(btn, txt, spin, on){
+        document.getElementById(txt)
+            .classList.toggle('d-none', on);
+        document.getElementById(spin)
+            .classList.toggle('d-none', !on);
+        document.getElementById(btn).disabled = on;
+    }
+
+    function mkTable(rows){
+        return '<table class="table table-bordered mb-0"' +
+            ' style="font-size:.875rem"><tbody>' +
+            rows.map(function(r){
+                return '<tr><td style="font-weight:500;color:#555;' +
+                    'width:38%">' + r[0] + '</td>' +
+                    '<td>' + r[1] + '</td></tr>';
+            }).join('') +
+            '</tbody></table>';
+    }
+
+    function cr(label, value){
+        return '<tr><td style="font-weight:500;color:#555;width:38%">' +
+            label + '</td><td>' + (value||'—') + '</td></tr>';
+    }
+</script>
+</body>
+</html>
+```
+
+<!-- -&#45;&#45;-->
+
+<!--## After Changes — Do This-->
+<!--```-->
+<!--1. Stop Tomcat-->
+<!--2. Build → Rebuild Project-->
+<!--3. Login fresh at http://localhost:8080-->
+<!--4. Test Add New Reservation-->

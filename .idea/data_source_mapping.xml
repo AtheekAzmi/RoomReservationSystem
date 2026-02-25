@@ -9,5 +9,6 @@
     <file url="file://$PROJECT_DIR$/src/main/java/com/hotel/dao/RoomRateDAO.java" value="bee31bd6-31fc-420f-a7ad-2a4b35633620" />
     <file url="file://$PROJECT_DIR$/src/main/java/com/hotel/dao/StaffDAO.java" value="bee31bd6-31fc-420f-a7ad-2a4b35633620" />
     <file url="file://$PROJECT_DIR$/src/main/java/com/hotel/service/ReportService.java" value="bee31bd6-31fc-420f-a7ad-2a4b35633620" />
+    <file url="file://$PROJECT_DIR$/src/main/java/com/hotel/util/SessionManager.java" value="bee31bd6-31fc-420f-a7ad-2a4b35633620" />
   </component>
 </project>

@@ -724,10 +724,6 @@ public class TestRunner {
                 fail("isAdmin returned false for admin");
             }
 
-            // Session count
-            int count = sm.getActiveSessionCount();
-            pass("Active sessions: " + count);
-
             // Invalidate
             sm.invalidate(token);
             if (!sm.isValid(token)) {
