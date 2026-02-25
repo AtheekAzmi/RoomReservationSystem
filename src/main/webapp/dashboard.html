@@ -61,6 +61,112 @@
             </div>
         </div>
 
+        <!-- Navigation Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-4 col-lg-2">
+                <a href="reservations.html" class="text-decoration-none">
+                    <div class="text-center p-3 bg-white rounded-3
+                  shadow-sm h-100"
+                         style="border:2px solid transparent;
+                  transition:all .2s;cursor:pointer"
+                         onmouseover="this.style.borderColor='#1a3c5e'"
+                         onmouseout="this.style.borderColor='transparent'">
+                        <i class="bi bi-calendar-check"
+                           style="font-size:2rem;color:#1a3c5e"></i>
+                        <p class="mb-0 mt-2 fw-semibold"
+                           style="font-size:.82rem;color:#333">
+                            Reservations
+                        </p>
+                    </div>
+                </a>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <a href="guests.html" class="text-decoration-none">
+                    <div class="text-center p-3 bg-white rounded-3
+                  shadow-sm h-100"
+                         style="border:2px solid transparent;
+                  transition:all .2s;cursor:pointer"
+                         onmouseover="this.style.borderColor='#2e7d32'"
+                         onmouseout="this.style.borderColor='transparent'">
+                        <i class="bi bi-people"
+                           style="font-size:2rem;color:#2e7d32"></i>
+                        <p class="mb-0 mt-2 fw-semibold"
+                           style="font-size:.82rem;color:#333">
+                            Guests
+                        </p>
+                    </div>
+                </a>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <a href="rooms.html" class="text-decoration-none">
+                    <div class="text-center p-3 bg-white rounded-3
+                  shadow-sm h-100"
+                         style="border:2px solid transparent;
+                  transition:all .2s;cursor:pointer"
+                         onmouseover="this.style.borderColor='#e65100'"
+                         onmouseout="this.style.borderColor='transparent'">
+                        <i class="bi bi-door-open"
+                           style="font-size:2rem;color:#e65100"></i>
+                        <p class="mb-0 mt-2 fw-semibold"
+                           style="font-size:.82rem;color:#333">
+                            Rooms
+                        </p>
+                    </div>
+                </a>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <a href="billing.html" class="text-decoration-none">
+                    <div class="text-center p-3 bg-white rounded-3
+                  shadow-sm h-100"
+                         style="border:2px solid transparent;
+                  transition:all .2s;cursor:pointer"
+                         onmouseover="this.style.borderColor='#1565c0'"
+                         onmouseout="this.style.borderColor='transparent'">
+                        <i class="bi bi-receipt"
+                           style="font-size:2rem;color:#1565c0"></i>
+                        <p class="mb-0 mt-2 fw-semibold"
+                           style="font-size:.82rem;color:#333">
+                            Billing
+                        </p>
+                    </div>
+                </a>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <a href="reports.html" class="text-decoration-none">
+                    <div class="text-center p-3 bg-white rounded-3
+                  shadow-sm h-100"
+                         style="border:2px solid transparent;
+                  transition:all .2s;cursor:pointer"
+                         onmouseover="this.style.borderColor='#6a1b9a'"
+                         onmouseout="this.style.borderColor='transparent'">
+                        <i class="bi bi-bar-chart-line"
+                           style="font-size:2rem;color:#6a1b9a"></i>
+                        <p class="mb-0 mt-2 fw-semibold"
+                           style="font-size:.82rem;color:#333">
+                            Reports
+                        </p>
+                    </div>
+                </a>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2 admin-only">
+                <a href="staff.html" class="text-decoration-none">
+                    <div class="text-center p-3 bg-white rounded-3
+                  shadow-sm h-100"
+                         style="border:2px solid transparent;
+                  transition:all .2s;cursor:pointer"
+                         onmouseover="this.style.borderColor='#c62828'"
+                         onmouseout="this.style.borderColor='transparent'">
+                        <i class="bi bi-person-badge"
+                           style="font-size:2rem;color:#c62828"></i>
+                        <p class="mb-0 mt-2 fw-semibold"
+                           style="font-size:.82rem;color:#333">
+                            Staff
+                        </p>
+                    </div>
+                </a>
+            </div>
+        </div>
+
         <!-- Two column layout -->
         <div class="row g-3">
 
@@ -98,6 +204,7 @@
                 </div>
 
                 <!-- Quick Actions -->
+                <!-- Quick Actions -->
                 <div class="content-card">
                     <div class="card-header-custom">
                         <h6><i class="bi bi-lightning me-2"></i>Quick Actions</h6>
@@ -106,11 +213,21 @@
                         <a href="reservations.html" class="btn btn-hotel">
                             <i class="bi bi-plus-circle me-2"></i>New Reservation
                         </a>
+                        <a href="guests.html" class="btn btn-hotel">
+                            <i class="bi bi-people me-2"></i>Manage Guests
+                        </a>
+                        <a href="rooms.html" class="btn btn-outline-primary">
+                            <i class="bi bi-door-open me-2"></i>View Rooms
+                        </a>
                         <a href="billing.html" class="btn btn-outline-primary">
                             <i class="bi bi-receipt me-2"></i>Generate Bill
                         </a>
                         <a href="reports.html" class="btn btn-outline-secondary">
                             <i class="bi bi-bar-chart-line me-2"></i>View Reports
+                        </a>
+                        <a href="staff.html"
+                           class="btn btn-outline-secondary admin-only">
+                            <i class="bi bi-person-badge me-2"></i>Manage Staff
                         </a>
                     </div>
                 </div>
@@ -147,49 +264,69 @@
     }
 
     function renderStats(reservations, rooms) {
-        const confirmed  = reservations.filter(r => r.status === 'CONFIRMED').length;
-        const checkedIn  = reservations.filter(r => r.status === 'CHECKED_IN').length;
-        const available  = rooms.filter(r => r.roomStatus === 'AVAILABLE').length;
-        const occupied   = rooms.filter(r => r.roomStatus === 'OCCUPIED').length;
-        const totalRooms = rooms.length;
+        var confirmed  = reservations.filter(function(r){ return r.status === 'CONFIRMED'; }).length;
+        var checkedIn  = reservations.filter(function(r){ return r.status === 'CHECKED_IN'; }).length;
+        var available  = rooms.filter(function(r){ return r.roomStatus === 'AVAILABLE'; }).length;
+        var occupied   = rooms.filter(function(r){ return r.roomStatus === 'OCCUPIED'; }).length;
+        var totalRooms = rooms.length;
 
         document.getElementById('statsRow').innerHTML = `
-      <div class="col-sm-6 col-xl-3">
-        <div class="stat-card">
-          <div class="stat-icon blue"><i class="bi bi-calendar-check"></i></div>
+    <div class="col-sm-6 col-xl-3">
+      <a href="reservations.html" class="text-decoration-none">
+        <div class="stat-card" style="cursor:pointer">
+          <div class="stat-icon blue">
+            <i class="bi bi-calendar-check"></i>
+          </div>
           <div class="stat-info">
             <h3>${confirmed}</h3>
-            <p>Confirmed</p>
+            <p>Confirmed Reservations</p>
+            <small class="text-primary">View All →</small>
           </div>
         </div>
-      </div>
-      <div class="col-sm-6 col-xl-3">
-        <div class="stat-card">
-          <div class="stat-icon green"><i class="bi bi-person-check"></i></div>
+      </a>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+      <a href="guests.html" class="text-decoration-none">
+        <div class="stat-card" style="cursor:pointer">
+          <div class="stat-icon green">
+            <i class="bi bi-people"></i>
+          </div>
           <div class="stat-info">
             <h3>${checkedIn}</h3>
-            <p>Checked In</p>
+            <p>Guests Checked In</p>
+            <small class="text-success">Manage Guests →</small>
           </div>
         </div>
-      </div>
-      <div class="col-sm-6 col-xl-3">
-        <div class="stat-card">
-          <div class="stat-icon orange"><i class="bi bi-door-open"></i></div>
+      </a>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+      <a href="rooms.html" class="text-decoration-none">
+        <div class="stat-card" style="cursor:pointer">
+          <div class="stat-icon orange">
+            <i class="bi bi-door-open"></i>
+          </div>
           <div class="stat-info">
             <h3>${available}</h3>
             <p>Available Rooms</p>
+            <small class="text-warning">View Rooms →</small>
           </div>
         </div>
-      </div>
-      <div class="col-sm-6 col-xl-3">
-        <div class="stat-card">
-          <div class="stat-icon purple"><i class="bi bi-building"></i></div>
+      </a>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+      <a href="rooms.html" class="text-decoration-none">
+        <div class="stat-card" style="cursor:pointer">
+          <div class="stat-icon purple">
+            <i class="bi bi-building"></i>
+          </div>
           <div class="stat-info">
             <h3>${occupied}/${totalRooms}</h3>
-            <p>Occupancy</p>
+            <p>Room Occupancy</p>
+            <small class="text-purple">View Details →</small>
           </div>
         </div>
-      </div>`;
+      </a>
+    </div>`;
     }
 
     function renderRecentReservations(reservations) {
