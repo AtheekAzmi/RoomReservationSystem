@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Guests — Hotel System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        :root { --primary:#1a3c5e; --accent:#e8a020; --sidebar:250px; }
+        * { box-sizing:border-box; }
+        body {
+            background:#f0f4f8;
+            font-family:'Segoe UI',sans-serif;
+            margin:0; padding:0;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            position:fixed; top:0; left:0;
+            width:var(--sidebar); height:100vh;
+            background:var(--primary); z-index:1000;
+            overflow-y:auto; display:flex;
+            flex-direction:column;
+        }
+        .sidebar .nav-link {
+            color:rgba(255,255,255,.75);
+            padding:.65rem 1rem;
+            display:flex; align-items:center;
+            gap:.75rem; font-size:.9rem;
+            border-left:3px solid transparent;
+            transition:all .2s; text-decoration:none;
+        }
+        .sidebar .nav-link:hover,
+        .sidebar .nav-link.active {
+            background:rgba(255,255,255,.12);
+            color:#fff; border-left-color:var(--accent);
+        }
+
+        /* Layout */
+        .main-content {
+            margin-left:var(--sidebar); min-height:100vh;
+            display:flex; flex-direction:column;
+        }
+        .topbar {
+            background:#fff; padding:.875rem 1.5rem;
+            border-bottom:1px solid #e0e0e0;
+            display:flex; align-items:center;
+            justify-content:space-between;
+            position:sticky; top:0; z-index:999;
+            flex-shrink:0;
+        }
+        .content-area { padding:1.5rem; flex:1; }
+
+        /* Cards */
+        .card-box {
+            background:#fff; border-radius:12px;
+            padding:1.5rem;
+            box-shadow:0 2px 8px rgba(0,0,0,.06);
+        }
+        .stat-box {
+            background:#fff; border-radius:12px;
+            padding:1.1rem 1.25rem;
+            display:flex; align-items:center;
+            gap:1rem; height:100%;
+            box-shadow:0 2px 8px rgba(0,0,0,.06);
+        }
+        .stat-ic {
+            width:48px; height:48px; border-radius:10px;
+            display:flex; align-items:center;
+            justify-content:center;
+            font-size:1.3rem; flex-shrink:0;
+        }
+
+        /* Guest Avatar */
+        .guest-avatar {
+            width:38px; height:38px; border-radius:50%;
+            display:flex; align-items:center;
+            justify-content:center; font-weight:700;
+            font-size:.85rem; color:#fff; flex-shrink:0;
+        }
+
+        /* Table */
+        .table thead th {
+            background:#f8fafc; color:#555;
+            font-size:.78rem; font-weight:600;
+            text-transform:uppercase; letter-spacing:.5px;
+            border-bottom:2px solid #e0e0e0;
+            white-space:nowrap;
+        }
+        .table tbody td {
+            vertical-align:middle; font-size:.875rem;
+            border-color:#f0f0f0;
+        }
+        .table tbody tr:hover { background:#f8faff; }
+
+        /* Modal */
+        .modal-header {
+            background:var(--primary); color:#fff;
+            border-radius:12px 12px 0 0;
+        }
+        .modal-header .btn-close { filter:invert(1); }
+        .modal-content { border-radius:12px; border:none; }
+
+        /* Buttons */
+        .btn-hotel {
+            background:linear-gradient(135deg,#1a3c5e,#2e6da4);
+            color:#fff; border:none;
+            border-radius:8px; font-weight:500;
+        }
+        .btn-hotel:hover {
+            background:linear-gradient(135deg,#152f4a,#245a8a);
+            color:#fff;
+        }
+        .btn-hotel:disabled { opacity:.65; }
+        .form-control:focus, .form-select:focus {
+            border-color:#2e6da4;
+            box-shadow:0 0 0 .2rem rgba(46,109,164,.2);
+        }
+
+        /* History item */
+        .history-item {
+            border-left:3px solid #dee2e6;
+            padding:.5rem .75rem; margin-bottom:.5rem;
+            border-radius:0 6px 6px 0;
+            background:#f8fafc; font-size:.85rem;
+        }
+        .history-item.CONFIRMED   { border-left-color:#0d6efd; }
+        .history-item.CHECKED_IN  { border-left-color:#198754; }
+        .history-item.CHECKED_OUT { border-left-color:#6c757d; }
+        .history-item.CANCELLED   { border-left-color:#dc3545; }
+
+        @media(max-width:768px){
+            .sidebar      { transform:translateX(-100%); }
+            .main-content { margin-left:0; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar"></div>
+
+<!-- MAIN -->
+<div class="main-content">
+
+    <!-- Topbar -->
+    <div class="topbar">
+        <div class="d-flex align-items-center gap-3">
+            <a href="dashboard.html"
+               class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Dashboard
+            </a>
+            <h5 class="mb-0"
+                style="color:var(--primary);font-weight:600">
+                <i class="bi bi-people me-2"></i>Guests
+            </h5>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+      <span class="text-muted" style="font-size:.85rem">
+        <i class="bi bi-person-circle me-1"></i>
+        <span id="topbarUser"></span>
+      </span>
+            <span class="badge bg-secondary" id="topbarRole"></span>
+        </div>
+    </div>
+
+    <!-- Content -->
+    <div class="content-area">
+
+        <!-- Stats -->
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-xl-3">
+                <div class="stat-box">
+                    <div class="stat-ic"
+                         style="background:#e3f2fd;color:#1565c0">
+                        <i class="bi bi-people"></i>
+                    </div>
+                    <div>
+                        <div class="fs-4 fw-bold" id="st-total">—</div>
+                        <div class="text-muted" style="font-size:.78rem">
+                            Total Guests</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-xl-3">
+                <div class="stat-box">
+                    <div class="stat-ic"
+                         style="background:#e8f5e9;color:#2e7d32">
+                        <i class="bi bi-person-check"></i>
+                    </div>
+                    <div>
+                        <div class="fs-4 fw-bold" id="st-active">—</div>
+                        <div class="text-muted" style="font-size:.78rem">
+                            Currently Staying</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-xl-3">
+                <div class="stat-box">
+                    <div class="stat-ic"
+                         style="background:#fff3e0;color:#e65100">
+                        <i class="bi bi-calendar-check"></i>
+                    </div>
+                    <div>
+                        <div class="fs-4 fw-bold" id="st-reservations">—</div>
+                        <div class="text-muted" style="font-size:.78rem">
+                            Total Reservations</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-xl-3">
+                <div class="stat-box">
+                    <div class="stat-ic"
+                         style="background:#f3e5f5;color:#6a1b9a">
+                        <i class="bi bi-person-plus"></i>
+                    </div>
+                    <div>
+                        <div class="fs-4 fw-bold" id="st-new">—</div>
+                        <div class="text-muted" style="font-size:.78rem">
+                            New This Month</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Guest Table -->
+        <div class="card-box">
+
+            <div class="d-flex flex-wrap align-items-center
+                  justify-content-between gap-2 mb-3">
+                <h6 class="mb-0"
+                    style="color:var(--primary);font-weight:600">
+                    <i class="bi bi-list-ul me-2"></i>All Guests
+                </h6>
+                <button type="button"
+                        class="btn btn-hotel btn-sm px-3"
+                        onclick="openAdd()">
+                    <i class="bi bi-plus-lg me-1"></i>Add Guest
+                </button>
+            </div>
+
+            <!-- Filters -->
+            <div class="row g-2 mb-3">
+                <div class="col-md-6">
+                    <div class="input-group input-group-sm">
+            <span class="input-group-text bg-white">
+              <i class="bi bi-search text-muted"></i>
+            </span>
+                        <input type="text" id="searchInput"
+                               class="form-control"
+                               placeholder="Search name, contact, email…"
+                               oninput="doFilter()">
+                    </div>
+                </div>
+                <div class="col-auto">
+                    <button type="button"
+                            class="btn btn-outline-secondary btn-sm"
+                            onclick="loadGuests()">
+                        <i class="bi bi-arrow-clockwise me-1"></i>
+                        Refresh
+                    </button>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div id="guestWrap">
+                <div class="text-center py-5 text-muted">
+                    <div class="spinner-border text-primary mb-2"></div>
+                    <p class="mb-0">Loading guests…</p>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between mt-2"
+                 style="font-size:.8rem;color:#999">
+                <span id="tblInfo"></span>
+                <span id="tblFilter"></span>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- ══════════ ADD GUEST MODAL ══════════ -->
+<div class="modal fade" id="addModal" tabindex="-1"
+     data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-person-plus me-2"></i>Add New Guest
+                </h5>
+                <button type="button" class="btn-close"
+                        onclick="closeAdd()"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">
+                            Guest Name <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" id="a_name"
+                               class="form-control"
+                               placeholder="Full name">
+                        <div class="invalid-feedback">
+                            At least 2 characters required.
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">
+                            Contact Number
+                            <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" id="a_contact"
+                               class="form-control"
+                               placeholder="+94771234567">
+                        <div class="invalid-feedback">
+                            7–15 digits required.
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">
+                            Email Address
+                        </label>
+                        <input type="text" id="a_email"
+                               class="form-control"
+                               placeholder="guest@email.com">
+                        <div class="invalid-feedback">
+                            Invalid email format.
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">
+                            Address
+                        </label>
+                        <input type="text" id="a_address"
+                               class="form-control"
+                               placeholder="Street, City">
+                    </div>
+                </div>
+                <div id="addErr"
+                     class="alert alert-danger d-none mt-3 py-2"
+                     style="font-size:.85rem"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary"
+                        onclick="closeAdd()">Cancel</button>
+                <button type="button" id="btnAdd"
+                        class="btn btn-hotel"
+                        onclick="submitAdd()">
+          <span id="btnAddText">
+            <i class="bi bi-check-circle me-1"></i>
+            Save Guest
+          </span>
+                    <span id="btnAddSpin" class="d-none">
+            <span class="spinner-border
+                         spinner-border-sm me-1"></span>
+            Saving…
+          </span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════ EDIT GUEST MODAL ══════════ -->
+<div class="modal fade" id="editModal" tabindex="-1"
+     data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-pencil me-2"></i>Edit Guest
+                </h5>
+                <button type="button" class="btn-close"
+                        data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">
+                            Guest Name <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" id="e_name"
+                               class="form-control"
+                               placeholder="Full name">
+                        <div class="invalid-feedback">
+                            At least 2 characters required.
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">
+                            Contact Number
+                            <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" id="e_contact"
+                               class="form-control"
+                               placeholder="+94771234567">
+                        <div class="invalid-feedback">
+                            7–15 digits required.
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">
+                            Email Address
+                        </label>
+                        <input type="text" id="e_email"
+                               class="form-control"
+                               placeholder="guest@email.com">
+                        <div class="invalid-feedback">
+                            Invalid email format.
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">
+                            Address
+                        </label>
+                        <input type="text" id="e_address"
+                               class="form-control"
+                               placeholder="Street, City">
+                    </div>
+                </div>
+                <div id="editErr"
+                     class="alert alert-danger d-none mt-3 py-2"
+                     style="font-size:.85rem"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary"
+                        data-bs-dismiss="modal">Cancel</button>
+                <button type="button" id="btnEdit"
+                        class="btn btn-hotel"
+                        onclick="submitEdit()">
+          <span id="btnEditText">
+            <i class="bi bi-check-circle me-1"></i>
+            Update Guest
+          </span>
+                    <span id="btnEditSpin" class="d-none">
+            <span class="spinner-border
+                         spinner-border-sm me-1"></span>
+            Updating…
+          </span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════ VIEW GUEST MODAL ══════════ -->
+<div class="modal fade" id="viewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-person me-2"></i>Guest Profile
+                </h5>
+                <button type="button" class="btn-close"
+                        data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="viewBody">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary"
+                        data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/app.js"></script>
+<script>
+    'use strict';
+
+    var allGuests    = [];
+    var allRes       = [];
+    var editGuestId  = 0;
+
+    // ── Get modal ─────────────────────────────────────────────────
+    function getModal(id){
+        return bootstrap.Modal.getOrCreateInstance(
+            document.getElementById(id));
+    }
+
+    // ── Init ──────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', function(){
+        initPage('guests.html');
+        loadGuests();
+    });
+
+    // ══════════════════════════════════════════════
+    //  LOAD GUESTS
+    // ══════════════════════════════════════════════
+    async function loadGuests(){
+        document.getElementById('guestWrap').innerHTML =
+            '<div class="text-center py-5 text-muted">' +
+            '<div class="spinner-border text-primary mb-2"></div>' +
+            '<p class="mb-0">Loading guests…</p></div>';
+
+        try {
+            var results = await Promise.all([
+                API.get('api/guests'),
+                API.get('api/reservations')
+            ]);
+
+            if (!results[0]) return;
+
+            allGuests = Array.isArray(results[0]) ? results[0] : [];
+            allRes    = Array.isArray(results[1]) ? results[1] : [];
+
+            updateStats(allGuests, allRes);
+            renderTable(allGuests);
+
+        } catch(err){
+            document.getElementById('guestWrap').innerHTML =
+                '<div class="text-center py-5 text-danger">' +
+                '<i class="bi bi-exclamation-triangle"' +
+                ' style="font-size:2.5rem"></i>' +
+                '<p class="mt-2 fw-semibold">Failed to load guests</p>' +
+                '<p class="text-muted" style="font-size:.85rem">' +
+                err.message + '</p>' +
+                '<button type="button"' +
+                ' class="btn btn-outline-primary btn-sm mt-1"' +
+                ' onclick="loadGuests()">' +
+                '<i class="bi bi-arrow-clockwise me-1"></i>' +
+                'Retry</button></div>';
+        }
+    }
+
+    // ── Stats ─────────────────────────────────────────────────────
+    function updateStats(guests, reservations){
+        // Total guests
+        document.getElementById('st-total').textContent =
+            guests.length;
+
+        // Currently staying (CHECKED_IN)
+        var activeGuestIds = reservations
+            .filter(function(r){ return r.status === 'CHECKED_IN'; })
+            .map(function(r){ return r.guestId; });
+        document.getElementById('st-active').textContent =
+            new Set(activeGuestIds).size;
+
+        // Total reservations
+        document.getElementById('st-reservations').textContent =
+            reservations.length;
+
+        // New this month
+        var now   = new Date();
+        var month = now.getMonth();
+        var year  = now.getFullYear();
+        var newThisMonth = reservations.filter(function(r){
+            if (!r.checkinDate) return false;
+            var d = new Date(r.checkinDate);
+            return d.getMonth()===month && d.getFullYear()===year;
+        }).length;
+        document.getElementById('st-new').textContent =
+            newThisMonth;
+    }
+
+    // ── Render Table ──────────────────────────────────────────────
+    function renderTable(list){
+        if (!list.length){
+            document.getElementById('guestWrap').innerHTML =
+                '<div class="text-center py-5 text-muted">' +
+                '<i class="bi bi-people" ' +
+                'style="font-size:3rem;opacity:.25"></i>' +
+                '<p class="mt-2 mb-0">No guests found</p></div>';
+            document.getElementById('tblInfo').textContent = '';
+            return;
+        }
+
+        var rows = list.map(function(g){
+            var initials = getInitials(g.guestName);
+            var color    = avatarColor(g.guestId);
+            var resCount = allRes.filter(function(r){
+                return r.guestId === g.guestId;
+            }).length;
+
+            return '<tr>' +
+                '<td>' +
+                '<div class="d-flex align-items-center gap-2">' +
+                '<div class="guest-avatar"' +
+                ' style="background:' + color + '">' +
+                initials +
+                '</div>' +
+                '<div>' +
+                '<div class="fw-semibold">' +
+                (g.guestName||'—') + '</div>' +
+                '<small class="text-muted">' +
+                'ID #' + g.guestId +
+                '</small>' +
+                '</div>' +
+                '</div>' +
+                '</td>' +
+                '<td>' +
+                '<i class="bi bi-telephone text-muted me-1"></i>' +
+                (g.contactNumber||'—') +
+                '</td>' +
+                '<td>' +
+                (g.email
+                    ? '<i class="bi bi-envelope text-muted me-1"></i>' +
+                    g.email
+                    : '<span class="text-muted">—</span>') +
+                '</td>' +
+                '<td>' +
+                '<span class="badge bg-light text-dark border">' +
+                resCount + ' reservation' +
+                (resCount!==1?'s':'') +
+                '</span>' +
+                '</td>' +
+                '<td>' +
+                '<div class="d-flex gap-1">' +
+                '<button type="button"' +
+                ' class="btn btn-sm btn-outline-primary"' +
+                ' title="View Profile"' +
+                ' onclick="viewGuest(' + g.guestId + ')">' +
+                '<i class="bi bi-eye"></i></button>' +
+                '<button type="button"' +
+                ' class="btn btn-sm btn-outline-warning"' +
+                ' title="Edit Guest"' +
+                ' onclick="openEdit(' + g.guestId + ')">' +
+                '<i class="bi bi-pencil"></i></button>' +
+                '</div>' +
+                '</td>' +
+                '</tr>';
+        }).join('');
+
+        document.getElementById('guestWrap').innerHTML =
+            '<div class="table-responsive">' +
+            '<table class="table table-hover mb-0">' +
+            '<thead><tr>' +
+            '<th>Guest</th>' +
+            '<th>Contact</th>' +
+            '<th>Email</th>' +
+            '<th>Reservations</th>' +
+            '<th style="width:100px">Actions</th>' +
+            '</tr></thead>' +
+            '<tbody>' + rows + '</tbody>' +
+            '</table></div>';
+
+        document.getElementById('tblInfo').textContent =
+            'Showing ' + list.length + ' of ' +
+            allGuests.length + ' guests';
+    }
+
+    // ── Filter ────────────────────────────────────────────────────
+    function doFilter(){
+        var q = document.getElementById('searchInput')
+            .value.toLowerCase().trim();
+        var filtered = allGuests.filter(function(g){
+            return !q ||
+                (g.guestName     ||'').toLowerCase().includes(q) ||
+                (g.contactNumber ||'').toLowerCase().includes(q) ||
+                (g.email         ||'').toLowerCase().includes(q);
+        });
+        renderTable(filtered);
+        document.getElementById('tblFilter').textContent =
+            filtered.length !== allGuests.length
+                ? filtered.length + ' matched' : '';
+    }
+
+    // ══════════════════════════════════════════════
+    //  VIEW GUEST PROFILE
+    // ══════════════════════════════════════════════
+    function viewGuest(guestId){
+        var g = allGuests.find(function(x){
+            return x.guestId === guestId;
+        });
+        if (!g){
+            Toast.show('Guest not found','warning'); return;
+        }
+
+        var initials = getInitials(g.guestName);
+        var color    = avatarColor(g.guestId);
+
+        // Get this guest's reservations
+        var guestRes = allRes.filter(function(r){
+            return r.guestId === guestId;
+        });
+
+        // History HTML
+        var histHtml = '';
+        if (guestRes.length){
+            histHtml = guestRes.map(function(r){
+                return '<div class="history-item ' + r.status + '">' +
+                    '<div class="d-flex justify-content-between' +
+                    ' align-items-center">' +
+                    '<div>' +
+                    '<span class="fw-semibold">' +
+                    r.reservationNumber + '</span>' +
+                    '<span class="ms-2 text-muted"' +
+                    ' style="font-size:.8rem">Room ' +
+                    (r.roomNumber||'—') + '</span>' +
+                    '</div>' +
+                    statusBadge(r.status) +
+                    '</div>' +
+                    '<div class="text-muted mt-1"' +
+                    ' style="font-size:.8rem">' +
+                    '<i class="bi bi-calendar2 me-1"></i>' +
+                    fmtDate(r.checkinDate) + ' → ' +
+                    fmtDate(r.checkoutDate) +
+                    '</div>' +
+                    '</div>';
+            }).join('');
+        } else {
+            histHtml =
+                '<p class="text-muted mb-0"' +
+                ' style="font-size:.875rem">' +
+                'No reservations found.</p>';
+        }
+
+        document.getElementById('viewBody').innerHTML =
+            // Profile header
+            '<div class="d-flex align-items-center gap-3 mb-4 p-3' +
+            ' rounded" style="background:#f8fafc">' +
+            '<div class="guest-avatar"' +
+            ' style="background:' + color +
+            ';width:56px;height:56px;font-size:1.2rem">' +
+            initials +
+            '</div>' +
+            '<div>' +
+            '<h6 class="mb-0 fw-bold">' +
+            (g.guestName||'—') + '</h6>' +
+            '<small class="text-muted">Guest ID #' +
+            g.guestId + '</small>' +
+            '</div>' +
+            '</div>' +
+
+            // Details table
+            '<h6 class="fw-semibold mb-2"' +
+            ' style="color:var(--primary);font-size:.85rem">' +
+            '<i class="bi bi-person-lines-fill me-1"></i>' +
+            'Contact Information</h6>' +
+            '<table class="table table-bordered mb-4"' +
+            ' style="font-size:.875rem"><tbody>' +
+            vrow('Full Name',
+                g.guestName || '—') +
+            vrow('Contact',
+                '<i class="bi bi-telephone me-1"></i>' +
+                (g.contactNumber||'—')) +
+            vrow('Email',
+                g.email
+                    ? '<i class="bi bi-envelope me-1"></i>' + g.email
+                    : '—') +
+            vrow('Address',
+                g.address
+                    ? '<i class="bi bi-geo-alt me-1"></i>' + g.address
+                    : '—') +
+            '</tbody></table>' +
+
+            // Reservation history
+            '<h6 class="fw-semibold mb-2"' +
+            ' style="color:var(--primary);font-size:.85rem">' +
+            '<i class="bi bi-calendar-check me-1"></i>' +
+            'Reservation History (' + guestRes.length + ')</h6>' +
+            histHtml;
+
+        getModal('viewModal').show();
+    }
+
+    // ══════════════════════════════════════════════
+    //  ADD GUEST
+    // ══════════════════════════════════════════════
+    function openAdd(){
+        ['a_name','a_contact','a_email','a_address']
+            .forEach(function(id){
+                var el = document.getElementById(id);
+                el.value = '';
+                el.classList.remove('is-invalid','is-valid');
+            });
+        document.getElementById('addErr')
+            .classList.add('d-none');
+        getModal('addModal').show();
+    }
+
+    function closeAdd(){
+        getModal('addModal').hide();
+    }
+
+    async function submitAdd(){
+        var name    = gv('a_name').trim();
+        var contact = gv('a_contact').trim();
+        var email   = gv('a_email').trim();
+        var ok      = true;
+
+        ok = vf('a_name',    name.length >= 2, ok);
+        ok = vf('a_contact',
+            /^[0-9+\-]{7,15}$/.test(contact), ok);
+        if (email){
+            ok = vf('a_email',
+                /^[\w.+\-]+@[\w\-]+\.[a-zA-Z]{2,}$/.test(email), ok);
+        }
+        if (!ok) return;
+
+        setBL('btnAdd','btnAddText','btnAddSpin', true);
+        document.getElementById('addErr').classList.add('d-none');
+
+        try {
+            var data = await API.post('api/guests', {
+                guestName    : name,
+                contactNumber: contact,
+                email        : email,
+                address      : gv('a_address').trim()
+            });
+            if (!data) return;
+
+            closeAdd();
+            Toast.show(
+                '✅ Guest "' + data.guestName + '" added!',
+                'success');
+            loadGuests();
+
+        } catch(err){
+            var e = document.getElementById('addErr');
+            e.textContent = err.message;
+            e.classList.remove('d-none');
+        } finally {
+            setBL('btnAdd','btnAddText','btnAddSpin', false);
+        }
+    }
+
+    // ══════════════════════════════════════════════
+    //  EDIT GUEST
+    // ══════════════════════════════════════════════
+    function openEdit(guestId){
+        var g = allGuests.find(function(x){
+            return x.guestId === guestId;
+        });
+        if (!g){
+            Toast.show('Guest not found','warning'); return;
+        }
+
+        editGuestId = guestId;
+
+        document.getElementById('e_name').value    =
+            g.guestName     || '';
+        document.getElementById('e_contact').value =
+            g.contactNumber || '';
+        document.getElementById('e_email').value   =
+            g.email         || '';
+        document.getElementById('e_address').value =
+            g.address       || '';
+
+        ['e_name','e_contact','e_email','e_address']
+            .forEach(function(id){
+                document.getElementById(id)
+                    .classList.remove('is-invalid','is-valid');
+            });
+        document.getElementById('editErr')
+            .classList.add('d-none');
+
+        getModal('editModal').show();
+    }
+
+    async function submitEdit(){
+        var name    = gv('e_name').trim();
+        var contact = gv('e_contact').trim();
+        var email   = gv('e_email').trim();
+        var ok      = true;
+
+        ok = vf('e_name',    name.length >= 2, ok);
+        ok = vf('e_contact',
+            /^[0-9+\-]{7,15}$/.test(contact), ok);
+        if (email){
+            ok = vf('e_email',
+                /^[\w.+\-]+@[\w\-]+\.[a-zA-Z]{2,}$/.test(email), ok);
+        }
+        if (!ok) return;
+
+        setBL('btnEdit','btnEditText','btnEditSpin', true);
+        document.getElementById('editErr').classList.add('d-none');
+
+        try {
+            var data = await API.put(
+                'api/guests/' + editGuestId, {
+                    guestName    : name,
+                    contactNumber: contact,
+                    email        : email,
+                    address      : gv('e_address').trim()
+                });
+            if (!data) return;
+
+            getModal('editModal').hide();
+            Toast.show('Guest updated successfully','success');
+            loadGuests();
+
+        } catch(err){
+            var e = document.getElementById('editErr');
+            e.textContent = err.message;
+            e.classList.remove('d-none');
+        } finally {
+            setBL('btnEdit','btnEditText','btnEditSpin', false);
+        }
+    }
+
+    // ══════════════════════════════════════════════
+    //  HELPERS
+    // ══════════════════════════════════════════════
+    function gv(id){
+        var el = document.getElementById(id);
+        return el ? el.value : '';
+    }
+
+    function vf(id, cond, cur){
+        var el = document.getElementById(id);
+        if (!el) return cur;
+        if (cond){
+            el.classList.remove('is-invalid');
+            el.classList.add('is-valid');
+            return cur;
+        }
+        el.classList.add('is-invalid');
+        el.classList.remove('is-valid');
+        return false;
+    }
+
+    function setBL(btn, txt, spin, on){
+        document.getElementById(txt)
+            .classList.toggle('d-none', on);
+        document.getElementById(spin)
+            .classList.toggle('d-none', !on);
+        document.getElementById(btn).disabled = on;
+    }
+
+    function vrow(label, value){
+        return '<tr>' +
+            '<td style="font-weight:500;color:#555;width:35%">' +
+            label + '</td>' +
+            '<td>' + (value||'—') + '</td>' +
+            '</tr>';
+    }
+
+    function getInitials(name){
+        if (!name) return '?';
+        return name.trim().split(' ')
+            .map(function(w){ return w[0]||''; })
+            .join('').toUpperCase().slice(0,2);
+    }
+
+    function avatarColor(id){
+        var colors = [
+            '#1565c0','#2e7d32','#e65100',
+            '#6a1b9a','#c62828','#00695c',
+            '#1a3c5e','#4527a0','#558b2f'
+        ];
+        return colors[id % colors.length];
+    }
+
+</script>
+</body>
+</html>
