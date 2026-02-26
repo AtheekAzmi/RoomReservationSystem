@@ -157,6 +157,8 @@
             display:flex; flex-direction:column;
             align-items:center; justify-content:center;
             position:relative;
+            overflow:hidden;
+            border-radius:8px 8px 0 0;
         }
         .room-type-banner .rtb-icon {
             font-size:2.8rem; opacity:.85; line-height:1;
@@ -830,6 +832,12 @@
                 ' title="View" onclick="viewRoom(' +
                 r.roomId + ')">' +
                 '<i class="bi bi-eye"></i></button>' +
+                '<button type="button"' +
+                ' class="btn btn-sm btn-outline-secondary"' +
+                ' title="Change Status"' +
+                ' onclick="openStatus(' + r.roomId +
+                ',\'' + r.roomNumber + '\',\'' + (r.typeName||'') + '\',\'' + r.roomStatus + '\')">' +
+                '<i class="bi bi-arrow-repeat"></i></button>' +
                 (isAdmin
                     ? '<button type="button"' +
                     ' class="btn btn-sm btn-outline-warning"' +
@@ -842,14 +850,7 @@
                     ' onclick="openDeleteRoom(' + r.roomId +
                     ',\'' + r.roomNumber + '\')">' +
                     '<i class="bi bi-trash"></i></button>'
-                    : (r.roomStatus !== 'AVAILABLE'
-                        ? '<button type="button"' +
-                        ' class="btn btn-sm btn-outline-success"' +
-                        ' title="Mark Available"' +
-                        ' onclick="markAvailable(' + r.roomId +
-                        ',\'' + r.roomNumber + '\')">' +
-                        '<i class="bi bi-check-circle"></i></button>'
-                        : '')) +
+                    : '') +
                 '</div>' +
                 '</td></tr>';
         }).join('');
@@ -893,13 +894,7 @@
                 sc + ';border-radius:12px 0 0 12px;z-index:1"></div>' +
 
                 // Room type image banner
-                '<div class="room-type-banner" style="' + bannerBg(cfg) + ';color:' + bannerTextColor(cfg) + '">' +
-                bannerOverlay(cfg) +
-                '<i class="bi ' + cfg.icon + ' rtb-icon"></i>' +
-                '<span class="rtb-label">' + cfg.label + '</span>' +
-                '<span class="rtb-status" style="color:' + sc + '">' +
-                r.roomStatus + '</span>' +
-                '</div>' +
+                buildRoomBanner(cfg, cfg.label, r.roomStatus, sc) +
 
                 '<div class="ps-2">' +
                 '<div class="d-flex justify-content-between' +
@@ -931,6 +926,12 @@
                 ' class="btn btn-sm btn-outline-primary"' +
                 ' onclick="viewRoom(' + r.roomId + ')">' +
                 '<i class="bi bi-eye"></i></button>' +
+                '<button type="button"' +
+                ' class="btn btn-sm btn-outline-secondary"' +
+                ' title="Change Status"' +
+                ' onclick="openStatus(' + r.roomId +
+                ',\'' + r.roomNumber + '\',\'' + (r.typeName||'') + '\',\'' + r.roomStatus + '\')">' +
+                '<i class="bi bi-arrow-repeat"></i></button>' +
                 (isAdmin
                     ? '<button type="button"' +
                     ' class="btn btn-sm btn-outline-warning"' +
@@ -943,14 +944,7 @@
                     ' onclick="openDeleteRoom(' + r.roomId +
                     ',\'' + r.roomNumber + '\')">' +
                     '<i class="bi bi-trash"></i></button>'
-                    : (r.roomStatus !== 'AVAILABLE'
-                        ? '<button type="button"' +
-                        ' class="btn btn-sm btn-outline-success"' +
-                        ' title="Mark Available"' +
-                        ' onclick="markAvailable(' + r.roomId +
-                        ',\'' + r.roomNumber + '\')">' +
-                        '<i class="bi bi-check-circle"></i></button>'
-                        : '')) +
+                    : '') +
                 '</div>' +
                 '</div>' +
                 '</div>' +
@@ -977,20 +971,8 @@
         var cfg = roomTypeConfig(room.typeName || 'Single');
         var sc  = statusColor(room.roomStatus);
         document.getElementById('viewBody').innerHTML =
-            // Room type image banner
-            '<div style="height:140px;' + bannerBg(cfg) + ';' +
-            'display:flex;flex-direction:column;align-items:center;' +
-            'justify-content:center;color:' + cfg.color + ';' +
-            'border-radius:8px;margin-bottom:1rem;position:relative;overflow:hidden">' +
-            '<i class="bi ' + cfg.icon + '" style="font-size:3.5rem;opacity:.85"></i>' +
-            '<span style="font-size:.75rem;font-weight:700;letter-spacing:.8px;' +
-            'text-transform:uppercase;margin-top:.5rem;opacity:.8">' +
-            cfg.label + '</span>' +
-            '<span style="position:absolute;top:10px;right:12px;' +
-            'font-size:.72rem;font-weight:700;padding:.25rem .65rem;' +
-            'border-radius:20px;background:rgba(255,255,255,.85);color:' + sc + '">' +
-            room.roomStatus + '</span>' +
-            '</div>' +
+            // Room type image banner (200px tall in the modal)
+            buildRoomBanner(cfg, cfg.label, room.roomStatus, sc, 200) +
             '<table class="table table-bordered mb-0"' +
             ' style="font-size:.875rem"><tbody>' +
             vrow('Room Number', room.roomNumber) +
@@ -1266,8 +1248,14 @@
                     html +=
                         '<div class="col-md-4 col-sm-6">' +
                         '<div class="avail-card">' +
-                        '<div class="avail-banner" style="' + bannerBg(tcfg) + ';color:' + tcfg.color + ';overflow:hidden">' +
-                        '<i class="bi ' + tcfg.icon + '"></i>' +
+                        '<div class="avail-banner" style="position:relative;overflow:hidden;' +
+                        (tcfg.image ? 'background:' + tcfg.bgLight : 'background:' + tcfg.bg) +
+                        ';color:' + tcfg.color + '">' +
+                        (tcfg.image
+                            ? '<img src="' + tcfg.image + '" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0" onerror="this.style.display=\'none\'">' +
+                              '<div style="position:absolute;inset:0;background:rgba(0,0,0,.25);z-index:1"></div>' +
+                              '<i class="bi ' + tcfg.icon + '" style="position:relative;z-index:2;color:#fff"></i>'
+                            : '<i class="bi ' + tcfg.icon + '"></i>') +
                         '</div>' +
                         '<div class="avail-body">' +
                         '<div class="fw-semibold" style="font-size:.875rem">' +
@@ -1304,14 +1292,16 @@
                 bgLight: '#e3f2fd',
                 color  : '#1565c0',
                 icon   : 'bi-house-door-fill',
-                label  : 'Single Room'
+                label  : 'Single Room',
+                image  : 'images/rooms/single-room.jpg'
             },
             Double: {
                 bg     : 'linear-gradient(135deg,#e8f5e9,#81c784)',
                 bgLight: '#e8f5e9',
                 color  : '#2e7d32',
                 icon   : 'bi-houses-fill',
-                label  : 'Double Room'
+                label  : 'Double Room',
+                image  : 'images/rooms/double-room.jpg'
             },
             Deluxe: {
                 bg     : 'linear-gradient(135deg,#fff3e0,#ffb74d)',
@@ -1326,26 +1316,42 @@
                 bgLight: '#f3e5f5',
                 color  : '#6a1b9a',
                 icon   : 'bi-gem',
-                label  : 'Luxury Suite'
+                label  : 'Luxury Suite',
+                image  : 'images/rooms/suite-room.jpg'
             }
         };
         return map[type] || map.Single;
     }
 
-    // Returns the CSS background string for a banner
-    function bannerBg(cfg){
-        if (cfg.image)
-            return 'background-color:' + cfg.bgLight + ';' +
-                   'background-image:url("' + cfg.image + '");' +
-                   'background-size:cover;background-position:center';
-        return 'background:' + cfg.bg;
+    // ── Room banner builder (used in grid cards, view modal, and availability picker) ──
+    // heightPx: optional inline height override (defaults to CSS class height of 120px)
+    function buildRoomBanner(cfg, labelText, statusText, sc, heightPx){
+        var statusChip = statusText
+            ? '<span class="rtb-status" style="color:' + sc + '">' + statusText + '</span>'
+            : '';
+        var heightStyle = heightPx ? 'height:' + heightPx + 'px;' : '';
+
+        if (cfg.image){
+            // Photo banner: full-cover image, dark gradient overlay, white label
+            return '<div class="room-type-banner" style="' + heightStyle + 'background:' + cfg.bgLight + '">' +
+                '<img src="' + cfg.image + '" alt="' + labelText + '" ' +
+                'style="position:absolute;inset:0;width:100%;height:100%;' +
+                'object-fit:cover;object-position:center;z-index:0;display:block" ' +
+                'onerror="this.style.display=\'none\'">' +
+                '<div class="rtb-overlay"></div>' +
+                '<span class="rtb-label" ' +
+                'style="color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.8);z-index:2">' +
+                labelText + '</span>' +
+                statusChip +
+                '</div>';
+        }
+        // Gradient + icon fallback
+        return '<div class="room-type-banner" style="' + heightStyle + 'background:' + cfg.bg + ';color:' + cfg.color + '">' +
+            '<i class="bi ' + cfg.icon + ' rtb-icon"></i>' +
+            '<span class="rtb-label">' + labelText + '</span>' +
+            statusChip +
+            '</div>';
     }
-
-    // No overlay — photo shows clean
-    function bannerOverlay(cfg){ return ''; }
-
-    // Always use the type color (readable on both gradient and photo)
-    function bannerTextColor(cfg){ return cfg.color; }
 
     function floorLabel(f){
         if (!f && f !== 0) return '—';

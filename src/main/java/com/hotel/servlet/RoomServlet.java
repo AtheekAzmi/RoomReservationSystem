@@ -64,13 +64,8 @@ public class RoomServlet extends BaseServlet {
             String body    = readBody(req);
 
             if (parts.length >= 3 && "status".equals(parts[2])) {
-                // PUT /api/rooms/{id}/status — status-only update
+                // PUT /api/rooms/{id}/status — all authenticated staff may change room status
                 String status = new JSONObject(body).getString("roomStatus");
-                // All authenticated staff may mark a room AVAILABLE.
-                // Only admins may set OCCUPIED or MAINTENANCE.
-                if (!"AVAILABLE".equals(status) && !isAdmin(req)) {
-                    sendError(res, 403, "Admin only"); return;
-                }
                 sendJson(res, 200, service.updateRoomStatus(roomId, status));
             } else {
                 // PUT /api/rooms/{id} — full room update (admin only)
