@@ -81,6 +81,37 @@ public class BillingService {
         return arr.toString();
     }
 
+    public String adjustBill(int billId, JSONObject json) {
+        Bill b = billDAO.findById(billId);
+        if (b == null) throw new IllegalArgumentException("Bill not found");
+        if ("PAID".equals(b.getPaymentStatus()))
+            throw new IllegalArgumentException("Cannot adjust a fully paid bill");
+
+        BigDecimal discountAmount = new BigDecimal(json.optString("discountAmount", "0"))
+                .setScale(2, RoundingMode.HALF_UP).max(BigDecimal.ZERO);
+        BigDecimal taxRate        = new BigDecimal(json.optString("taxRate", "10"))
+                .setScale(2, RoundingMode.HALF_UP);
+        BigDecimal additionalTax  = new BigDecimal(json.optString("additionalTax", "0"))
+                .setScale(2, RoundingMode.HALF_UP).max(BigDecimal.ZERO);
+
+        // Recalculate from DB subtotal (source of truth — never trust client subtotal)
+        BigDecimal subtotal   = b.getSubtotal();
+        BigDecimal afterDisc  = subtotal.subtract(discountAmount).max(BigDecimal.ZERO);
+        BigDecimal taxAmount  = afterDisc
+                .multiply(taxRate.divide(new BigDecimal("100"), 10, RoundingMode.HALF_UP))
+                .setScale(2, RoundingMode.HALF_UP);
+        BigDecimal totalAmount = afterDisc.add(taxAmount).add(additionalTax)
+                .setScale(2, RoundingMode.HALF_UP);
+
+        billDAO.updateAdjustments(billId, discountAmount, taxRate, taxAmount, totalAmount);
+
+        b.setDiscountAmount(discountAmount);
+        b.setTaxRate(taxRate);
+        b.setTaxAmount(taxAmount);
+        b.setTotalAmount(totalAmount);
+        return toBillJson(b).toString();
+    }
+
     public String processPayment(JSONObject json) {
         int    billId  = json.optInt   ("billId", -1);
         String method  = json.optString("paymentMethod", "").trim();
@@ -106,7 +137,7 @@ public class BillingService {
         if (amount.compareTo(b.getTotalAmount()) > 0)
             throw new IllegalArgumentException("Payment exceeds bill total");
 
-        Payment p = new Payment(billId, amount, method);
+        Payment p = new Payment(billId, amount, method, b.getDiscountAmount());
         paymentDAO.save(p);
 
         // Update bill status

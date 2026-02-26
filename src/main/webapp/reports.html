@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Reports — Hotel System</title>
+    <title>Reports — Ocean View Resort</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -104,8 +104,8 @@
             <button type="button" class="btn btn-sm btn-outline-secondary no-print" onclick="loadReports()">
                 <i class="bi bi-arrow-clockwise me-1"></i>Refresh
             </button>
-            <button type="button" class="btn btn-sm btn-hotel no-print" onclick="window.print()">
-                <i class="bi bi-printer me-1"></i>Print
+            <button type="button" class="btn btn-sm btn-hotel no-print" onclick="printReport()">
+                <i class="bi bi-printer me-1"></i>Print Report
             </button>
         </div>
     </div>
@@ -208,6 +208,24 @@
                         <div>
                             <div class="fs-4 fw-bold" id="rev-avg">—</div>
                             <div class="text-muted" style="font-size:.78rem">Avg. Bill Value</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-xl-3">
+                    <div class="stat-box" style="border-left-color:#e65100">
+                        <div class="stat-ic" style="background:#fff3e0;color:#e65100"><i class="bi bi-tag-fill"></i></div>
+                        <div>
+                            <div class="fs-4 fw-bold" id="rev-disc">—</div>
+                            <div class="text-muted" style="font-size:.78rem">Total Discounts</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-xl-3">
+                    <div class="stat-box" style="border-left-color:#7b1fa2">
+                        <div class="stat-ic" style="background:#f3e5f5;color:#7b1fa2"><i class="bi bi-percent"></i></div>
+                        <div>
+                            <div class="fs-4 fw-bold" id="rev-disc-count">—</div>
+                            <div class="text-muted" style="font-size:.78rem">Bills with Discount</div>
                         </div>
                     </div>
                 </div>
@@ -496,6 +514,207 @@
             'success', 2500);
     }
 
+    // ══════════════════════════════════════════════
+    //  PRINT REPORT
+    // ══════════════════════════════════════════════
+    function printReport(){
+        var rc = document.getElementById('reportContent');
+        if (!rc || rc.classList.contains('d-none')){
+            Toast.show('Please wait for data to load before printing.', 'warning');
+            return;
+        }
+
+        // Apply current filter to data
+        var bills = allBills.filter(function(b){
+            return inRange(b.createdAt || b.billDate || b.issueDate);
+        });
+        var reservations = allReservations.filter(function(r){
+            return inRange(r.checkinDate || r.checkInDate || r.createdAt);
+        });
+        var rooms = allRooms;
+
+        // Period label
+        var periodNames = { daily:'Today', weekly:'This Week', monthly:'This Month', yearly:'This Year', custom:'Custom Range' };
+        var periodLabel  = periodNames[currentPeriod] || 'All Time';
+        var fromLabel    = filterFrom ? filterFrom.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '';
+        var toLabel      = filterTo   ? filterTo.toLocaleDateString('en-US',  {month:'short',day:'numeric',year:'numeric'}) : '';
+        var dateRange    = (fromLabel && toLabel) ? fromLabel + ' \u2014 ' + toLabel : 'All Time';
+
+        // Revenue
+        var paid      = bills.filter(function(b){ return b.paymentStatus==='PAID'; });
+        var unpaid    = bills.filter(function(b){ return b.paymentStatus!=='PAID'; });
+        var revenue   = paid.reduce(function(s,b){ return s+(parseFloat(b.totalAmount)||0); }, 0);
+        var unpaidAmt = unpaid.reduce(function(s,b){ return s+(parseFloat(b.totalAmount)||0); }, 0);
+        var discTotal = bills.reduce(function(s,b){ return s+(parseFloat(b.discountAmount)||0); }, 0);
+        var payRate   = bills.length ? Math.round(paid.length/bills.length*100) : 0;
+        var avgBill   = paid.length ? revenue/paid.length : 0;
+
+        // Reservations
+        var confirmed  = reservations.filter(function(r){ return r.status==='CONFIRMED';   }).length;
+        var checkedIn  = reservations.filter(function(r){ return r.status==='CHECKED_IN';  }).length;
+        var checkedOut = reservations.filter(function(r){ return r.status==='CHECKED_OUT'; }).length;
+        var pending    = reservations.filter(function(r){ return r.status==='PENDING';     }).length;
+        var cancelled  = reservations.filter(function(r){ return r.status==='CANCELLED';   }).length;
+
+        // Room occupancy
+        var occRooms   = rooms.filter(function(r){ return r.roomStatus==='OCCUPIED';     }).length;
+        var availRooms = rooms.filter(function(r){ return r.roomStatus==='AVAILABLE';    }).length;
+        var maintRooms = rooms.filter(function(r){ return r.roomStatus==='MAINTENANCE';  }).length;
+        var totalRooms = rooms.length || 1;
+        var occRate    = Math.round(occRooms/totalRooms*100);
+
+        // Room type breakdown
+        var types = ['Single','Double','Deluxe','Suite'];
+        var roomTypeRows = types.map(function(t){
+            var typeRooms = rooms.filter(function(r){ return (r.typeName||r.roomType||'')===t; });
+            if (!typeRooms.length) return '';
+            var o   = typeRooms.filter(function(r){ return r.roomStatus==='OCCUPIED'; }).length;
+            var pct = Math.round(o/typeRooms.length*100);
+            return '<tr><td style="padding:.4rem .6rem;border-bottom:1px solid #f0f0f0">' + t + '</td>' +
+                '<td style="padding:.4rem .6rem;border-bottom:1px solid #f0f0f0;text-align:right">' + typeRooms.length + '</td>' +
+                '<td style="padding:.4rem .6rem;border-bottom:1px solid #f0f0f0;text-align:right;color:#e65100;font-weight:600">' + o + '</td>' +
+                '<td style="padding:.4rem .6rem;border-bottom:1px solid #f0f0f0;text-align:right">' + pct + '%</td></tr>';
+        }).join('');
+
+        // Recent paid transactions (top 10)
+        var recentTx = paid.slice().sort(function(a,b){ return (b.billId||0)-(a.billId||0); }).slice(0,10);
+        var txRows = recentTx.map(function(b, i){
+            var disc = parseFloat(b.discountAmount||0);
+            var bg   = i%2===0 ? '' : 'style="background:#fafafa"';
+            return '<tr ' + bg + '>' +
+                '<td style="padding:.4rem .6rem;border-bottom:1px solid #f0f0f0;font-weight:600;color:#1a3c5e">' + (b.billNumber||'—') + '</td>' +
+                '<td style="padding:.4rem .6rem;border-bottom:1px solid #f0f0f0;font-size:.82rem">' + (b.reservationNumber||'—') + '</td>' +
+                '<td style="padding:.4rem .6rem;border-bottom:1px solid #f0f0f0">' + (b.guestName||'—') + '</td>' +
+                '<td style="padding:.4rem .6rem;border-bottom:1px solid #f0f0f0;text-align:right;font-weight:700;color:#065f46">$' + parseFloat(b.totalAmount||0).toFixed(2) + '</td>' +
+                '<td style="padding:.4rem .6rem;border-bottom:1px solid #f0f0f0;text-align:right;color:#15803d">' + (disc>0 ? '\u2212$'+disc.toFixed(2) : '\u2014') + '</td>' +
+                '<td style="padding:.4rem .6rem;border-bottom:1px solid #f0f0f0">' + (b.paymentMethod||'—') + '</td>' +
+                '</tr>';
+        }).join('');
+
+        var thStyle = 'padding:.5rem .6rem;text-align:left;font-size:.82rem;font-weight:700';
+        var thRStyle = thStyle + ';text-align:right';
+
+        var html =
+            '<div style="font-family:Segoe UI,sans-serif;max-width:800px;margin:0 auto;color:#1a1a1a">' +
+
+            // ── Hotel header ──
+            '<div style="text-align:center;padding-bottom:1.25rem;margin-bottom:1.75rem;border-bottom:3px solid #1a3c5e">' +
+            '<div style="width:58px;height:58px;background:#1a3c5e;border-radius:14px;display:inline-flex;align-items:center;' +
+            'justify-content:center;font-size:1.7rem;color:#fff;margin-bottom:.75rem">&#127968;</div>' +
+            '<h1 style="color:#1a3c5e;margin:0;font-size:1.9rem;font-family:Georgia,serif;font-weight:700">Ocean View Resort</h1>' +
+            '<p style="color:#555;margin:.2rem 0 0;font-size:.9rem">&#128205; Beach Side, Galle</p>' +
+            '<h2 style="margin:.9rem 0 .3rem;color:#333;font-size:1.15rem;letter-spacing:.5px;text-transform:uppercase">Management Report</h2>' +
+            '<p style="margin:0;font-size:.88rem;color:#444"><strong>' + periodLabel + '</strong>&nbsp; &middot; &nbsp;' + dateRange + '</p>' +
+            '<p style="margin:.3rem 0 0;font-size:.78rem;color:#888">Generated: ' +
+            new Date().toLocaleString('en-US',{dateStyle:'medium',timeStyle:'short'}) + '</p>' +
+            '</div>' +
+
+            // ── Revenue summary ──
+            '<h3 style="color:#1a3c5e;font-size:1rem;text-transform:uppercase;letter-spacing:.6px;' +
+            'border-bottom:2px solid #e0e8f0;padding-bottom:.4rem;margin-bottom:.8rem">Revenue Summary</h3>' +
+            '<table style="width:100%;border-collapse:collapse;margin-bottom:1.75rem;font-size:.88rem">' +
+            '<tr style="background:#1a3c5e;color:#fff">' +
+            '<th style="' + thStyle  + '">Metric</th>' +
+            '<th style="' + thRStyle + '">Value</th>' +
+            '</tr>' +
+            '<tr><td style="padding:.45rem .6rem;border-bottom:1px solid #eee">Total Revenue Collected</td><td style="padding:.45rem .6rem;text-align:right;font-weight:700;color:#065f46">$' + revenue.toFixed(2) + '</td></tr>' +
+            '<tr style="background:#fafafa"><td style="padding:.45rem .6rem;border-bottom:1px solid #eee">Outstanding Amount</td><td style="padding:.45rem .6rem;text-align:right;font-weight:700;color:#c62828">$' + unpaidAmt.toFixed(2) + '</td></tr>' +
+            '<tr><td style="padding:.45rem .6rem;border-bottom:1px solid #eee">Total Discounts Given</td><td style="padding:.45rem .6rem;text-align:right;color:#e65100">$' + discTotal.toFixed(2) + '</td></tr>' +
+            '<tr style="background:#fafafa"><td style="padding:.45rem .6rem;border-bottom:1px solid #eee">Paid Bills</td><td style="padding:.45rem .6rem;text-align:right">' + paid.length + '</td></tr>' +
+            '<tr><td style="padding:.45rem .6rem;border-bottom:1px solid #eee">Unpaid / Partial Bills</td><td style="padding:.45rem .6rem;text-align:right">' + unpaid.length + '</td></tr>' +
+            '<tr style="background:#fafafa"><td style="padding:.45rem .6rem;border-bottom:1px solid #eee">Payment Rate</td><td style="padding:.45rem .6rem;text-align:right;font-weight:700">' + payRate + '%</td></tr>' +
+            '<tr><td style="padding:.45rem .6rem">Average Bill Value</td><td style="padding:.45rem .6rem;text-align:right">$' + avgBill.toFixed(2) + '</td></tr>' +
+            '</table>' +
+
+            // ── Reservation statistics ──
+            '<h3 style="color:#1a3c5e;font-size:1rem;text-transform:uppercase;letter-spacing:.6px;' +
+            'border-bottom:2px solid #e0e8f0;padding-bottom:.4rem;margin-bottom:.8rem">Reservation Statistics</h3>' +
+            '<table style="width:100%;border-collapse:collapse;margin-bottom:1.75rem;font-size:.88rem">' +
+            '<tr style="background:#1a3c5e;color:#fff">' +
+            '<th style="' + thStyle  + '">Status</th>' +
+            '<th style="' + thRStyle + '">Count</th>' +
+            '</tr>' +
+            '<tr><td style="padding:.45rem .6rem;border-bottom:1px solid #eee">Total Reservations</td><td style="padding:.45rem .6rem;text-align:right;font-weight:700">' + reservations.length + '</td></tr>' +
+            '<tr style="background:#fafafa"><td style="padding:.45rem .6rem;border-bottom:1px solid #eee">Confirmed</td><td style="padding:.45rem .6rem;text-align:right">' + confirmed + '</td></tr>' +
+            '<tr><td style="padding:.45rem .6rem;border-bottom:1px solid #eee">Checked In</td><td style="padding:.45rem .6rem;text-align:right;color:#065f46;font-weight:600">' + checkedIn + '</td></tr>' +
+            '<tr style="background:#fafafa"><td style="padding:.45rem .6rem;border-bottom:1px solid #eee">Checked Out</td><td style="padding:.45rem .6rem;text-align:right">' + checkedOut + '</td></tr>' +
+            '<tr><td style="padding:.45rem .6rem;border-bottom:1px solid #eee">Pending</td><td style="padding:.45rem .6rem;text-align:right;color:#e65100">' + pending + '</td></tr>' +
+            '<tr style="background:#fafafa"><td style="padding:.45rem .6rem">Cancelled</td><td style="padding:.45rem .6rem;text-align:right;color:#c62828">' + cancelled + '</td></tr>' +
+            '</table>' +
+
+            // ── Room occupancy ──
+            '<h3 style="color:#1a3c5e;font-size:1rem;text-transform:uppercase;letter-spacing:.6px;' +
+            'border-bottom:2px solid #e0e8f0;padding-bottom:.4rem;margin-bottom:.8rem">Room Occupancy</h3>' +
+            '<table style="width:100%;border-collapse:collapse;margin-bottom:1.75rem;font-size:.88rem">' +
+            '<tr style="background:#1a3c5e;color:#fff">' +
+            '<th style="' + thStyle  + '">Category</th>' +
+            '<th style="' + thRStyle + '">Rooms</th>' +
+            '</tr>' +
+            '<tr><td style="padding:.45rem .6rem;border-bottom:1px solid #eee">Total Rooms</td><td style="padding:.45rem .6rem;text-align:right;font-weight:700">' + rooms.length + '</td></tr>' +
+            '<tr style="background:#fafafa"><td style="padding:.45rem .6rem;border-bottom:1px solid #eee">Occupied</td><td style="padding:.45rem .6rem;text-align:right;color:#e65100;font-weight:700">' + occRooms + '</td></tr>' +
+            '<tr><td style="padding:.45rem .6rem;border-bottom:1px solid #eee">Available</td><td style="padding:.45rem .6rem;text-align:right;color:#2e7d32;font-weight:700">' + availRooms + '</td></tr>' +
+            '<tr style="background:#fafafa"><td style="padding:.45rem .6rem;border-bottom:1px solid #eee">Maintenance</td><td style="padding:.45rem .6rem;text-align:right;color:#c62828">' + maintRooms + '</td></tr>' +
+            '<tr><td style="padding:.45rem .6rem">Overall Occupancy Rate</td><td style="padding:.45rem .6rem;text-align:right;font-weight:700">' + occRate + '%</td></tr>' +
+            '</table>';
+
+        // Room type breakdown (only if data exists)
+        if (roomTypeRows) {
+            html +=
+                '<h3 style="color:#1a3c5e;font-size:1rem;text-transform:uppercase;letter-spacing:.6px;' +
+                'border-bottom:2px solid #e0e8f0;padding-bottom:.4rem;margin-bottom:.8rem">Room Type Breakdown</h3>' +
+                '<table style="width:100%;border-collapse:collapse;margin-bottom:1.75rem;font-size:.88rem">' +
+                '<tr style="background:#1a3c5e;color:#fff">' +
+                '<th style="' + thStyle  + '">Room Type</th>' +
+                '<th style="' + thRStyle + '">Total</th>' +
+                '<th style="' + thRStyle + '">Occupied</th>' +
+                '<th style="' + thRStyle + '">Occ. %</th>' +
+                '</tr>' +
+                roomTypeRows +
+                '</table>';
+        }
+
+        // Recent transactions table
+        if (txRows) {
+            html +=
+                '<h3 style="color:#1a3c5e;font-size:1rem;text-transform:uppercase;letter-spacing:.6px;' +
+                'border-bottom:2px solid #e0e8f0;padding-bottom:.4rem;margin-bottom:.8rem">Recent Paid Transactions</h3>' +
+                '<table style="width:100%;border-collapse:collapse;margin-bottom:1.75rem;font-size:.85rem">' +
+                '<thead><tr style="background:#1a3c5e;color:#fff">' +
+                '<th style="' + thStyle  + '">Bill #</th>' +
+                '<th style="' + thStyle  + '">Reservation</th>' +
+                '<th style="' + thStyle  + '">Guest</th>' +
+                '<th style="' + thRStyle + '">Amount</th>' +
+                '<th style="' + thRStyle + '">Discount</th>' +
+                '<th style="' + thStyle  + '">Method</th>' +
+                '</tr></thead><tbody>' +
+                txRows +
+                '</tbody></table>';
+        }
+
+        // Footer
+        html +=
+            '<div style="text-align:center;margin-top:2rem;padding-top:1rem;border-top:2px dashed #ccc;color:#888;font-size:.8rem">' +
+            '<p style="margin:0;font-weight:600;color:#1a3c5e">Ocean View Resort &nbsp;&middot;&nbsp; Beach Side, Galle</p>' +
+            '<p style="margin:.25rem 0 0">This report is confidential and intended for internal use only.</p>' +
+            '<p style="margin:.15rem 0 0">Generated on ' + new Date().toLocaleString('en-US',{dateStyle:'long',timeStyle:'short'}) + '</p>' +
+            '</div></div>';
+
+        var w = window.open('', '_blank', 'width=960,height=750');
+        w.document.write(
+            '<!DOCTYPE html><html><head>' +
+            '<title>Report \u2014 Ocean View Resort</title>' +
+            '<style>' +
+            'body{font-family:"Segoe UI",Arial,sans-serif;padding:2rem;background:#fff;margin:0}' +
+            'table{border-collapse:collapse;width:100%}' +
+            '@media print{body{padding:.5rem}@page{margin:1.5cm}}' +
+            '</style>' +
+            '</head><body>' + html +
+            '<script>window.onload=function(){window.print()};<\/script>' +
+            '</body></html>'
+        );
+        w.document.close();
+    }
+
     function inRange(dateStr){
         if (!dateStr) return true;
         var d = new Date(dateStr);
@@ -559,15 +778,19 @@
     //  REVENUE STATS
     // ══════════════════════════════════════════════
     function renderRevenue(bills){
-        var paid   = bills.filter(function(b){ return b.paymentStatus==='PAID'; });
-        var unpaid = bills.filter(function(b){ return b.paymentStatus!=='PAID'; });
-        var total  = paid.reduce(function(s,b){ return s + (parseFloat(b.totalAmount)||0); }, 0);
-        var avg    = paid.length ? total / paid.length : 0;
+        var paid      = bills.filter(function(b){ return b.paymentStatus==='PAID'; });
+        var unpaid    = bills.filter(function(b){ return b.paymentStatus!=='PAID'; });
+        var total     = paid.reduce(function(s,b){ return s + (parseFloat(b.totalAmount)||0); }, 0);
+        var avg       = paid.length ? total / paid.length : 0;
+        var discTotal = bills.reduce(function(s,b){ return s + (parseFloat(b.discountAmount)||0); }, 0);
+        var discCount = bills.filter(function(b){ return parseFloat(b.discountAmount||0) > 0; }).length;
 
-        document.getElementById('rev-total').textContent  = fmtMoney(total);
-        document.getElementById('rev-paid').textContent   = paid.length;
-        document.getElementById('rev-unpaid').textContent = unpaid.length;
-        document.getElementById('rev-avg').textContent    = fmtMoney(avg);
+        document.getElementById('rev-total').textContent      = fmtMoney(total);
+        document.getElementById('rev-paid').textContent       = paid.length;
+        document.getElementById('rev-unpaid').textContent     = unpaid.length;
+        document.getElementById('rev-avg').textContent        = fmtMoney(avg);
+        document.getElementById('rev-disc').textContent       = fmtMoney(discTotal);
+        document.getElementById('rev-disc-count').textContent = discCount;
     }
 
     // ══════════════════════════════════════════════

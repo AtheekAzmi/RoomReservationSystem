@@ -75,6 +75,22 @@ public class BillDAO {
         return list;
     }
 
+    public boolean updateAdjustments(int billId, java.math.BigDecimal discountAmount,
+                                      java.math.BigDecimal taxRate,
+                                      java.math.BigDecimal taxAmount,
+                                      java.math.BigDecimal totalAmount) {
+        String sql = "UPDATE bill SET discount_amount=?, tax_rate=?, tax_amount=?, total_amount=? WHERE bill_id=?";
+        try (Connection c = DatabaseConfig.getInstance().getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setBigDecimal(1, discountAmount);
+            ps.setBigDecimal(2, taxRate);
+            ps.setBigDecimal(3, taxAmount);
+            ps.setBigDecimal(4, totalAmount);
+            ps.setInt       (5, billId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) { e.printStackTrace(); return false; }
+    }
+
     public boolean updatePaymentStatus(int billId, String status) {
         String sql = "UPDATE bill SET payment_status=? WHERE bill_id=?";
         try (Connection c = DatabaseConfig.getInstance().getConnection();

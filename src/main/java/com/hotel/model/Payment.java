@@ -7,6 +7,7 @@ public class Payment {
     private int           paymentId;
     private int           billId;
     private BigDecimal    amountPaid;
+    private BigDecimal    discountAmount;
     private String        paymentMethod; // CASH, CARD, ONLINE
     private String        paymentStatus; // SUCCESS, FAILED, PENDING
     private LocalDateTime paymentDate;
@@ -14,11 +15,12 @@ public class Payment {
     public Payment() {}
 
     public Payment(int billId, BigDecimal amountPaid,
-                   String paymentMethod) {
-        this.billId        = billId;
-        this.amountPaid    = amountPaid;
-        this.paymentMethod = paymentMethod;
-        this.paymentStatus = "SUCCESS";
+                   String paymentMethod, BigDecimal discountAmount) {
+        this.billId         = billId;
+        this.amountPaid     = amountPaid;
+        this.paymentMethod  = paymentMethod;
+        this.discountAmount = discountAmount != null ? discountAmount : BigDecimal.ZERO;
+        this.paymentStatus  = "SUCCESS";
     }
 
     public int           getPaymentId()          { return paymentId; }
@@ -29,6 +31,9 @@ public class Payment {
 
     public BigDecimal    getAmountPaid()              { return amountPaid; }
     public void          setAmountPaid(BigDecimal a)  { this.amountPaid = a; }
+
+    public BigDecimal    getDiscountAmount()              { return discountAmount; }
+    public void          setDiscountAmount(BigDecimal d)  { this.discountAmount = d != null ? d : BigDecimal.ZERO; }
 
     public String        getPaymentMethod()          { return paymentMethod; }
     public void          setPaymentMethod(String m)  { this.paymentMethod = m; }
