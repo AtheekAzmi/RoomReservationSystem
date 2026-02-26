@@ -626,7 +626,14 @@
                     (r.typeName||'') + '\',\'' +
                     r.roomStatus + '\')">' +
                     '<i class="bi bi-pencil"></i></button>'
-                    : '') +
+                    : (r.roomStatus !== 'AVAILABLE'
+                        ? '<button type="button"' +
+                        ' class="btn btn-sm btn-outline-success"' +
+                        ' title="Mark Available"' +
+                        ' onclick="markAvailable(' + r.roomId +
+                        ',\'' + r.roomNumber + '\')">' +
+                        '<i class="bi bi-check-circle"></i></button>'
+                        : '')) +
                 '</div>' +
                 '</td></tr>';
         }).join('');
@@ -695,7 +702,14 @@
                     (r.typeName||'') + '\',\'' +
                     r.roomStatus + '\')">' +
                     '<i class="bi bi-pencil"></i></button>'
-                    : '') +
+                    : (r.roomStatus !== 'AVAILABLE'
+                        ? '<button type="button"' +
+                        ' class="btn btn-sm btn-outline-success"' +
+                        ' title="Mark Available"' +
+                        ' onclick="markAvailable(' + r.roomId +
+                        ',\'' + r.roomNumber + '\')">' +
+                        '<i class="bi bi-check-circle"></i></button>'
+                        : '')) +
                 '</div>' +
                 '</div>' +
                 '</div>' +
@@ -760,6 +774,23 @@
             var e = document.getElementById('updErr');
             e.textContent = err.message;
             e.classList.remove('d-none');
+        }
+    }
+
+    // ══════════════════════════════════════════════
+    //  MARK AVAILABLE (All staff)
+    // ══════════════════════════════════════════════
+    async function markAvailable(roomId, roomNumber){
+        if (!confirm('Mark Room ' + roomNumber + ' as AVAILABLE?')) return;
+        try {
+            await API.put(
+                'api/rooms/' + roomId + '/status',
+                { roomStatus: 'AVAILABLE' }
+            );
+            Toast.show('Room ' + roomNumber + ' is now Available', 'success');
+            loadRooms();
+        } catch(err){
+            Toast.show(err.message, 'error');
         }
     }
 

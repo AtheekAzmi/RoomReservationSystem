@@ -113,6 +113,14 @@ public class BillingService {
         String newStatus = amount.compareTo(b.getTotalAmount()) >= 0 ? "PAID" : "PARTIAL";
         billDAO.updatePaymentStatus(billId, newStatus);
 
+        // When fully paid, automatically release the room back to AVAILABLE
+        if ("PAID".equals(newStatus)) {
+            Reservation reservation = resDAO.findById(b.getReservationId());
+            if (reservation != null) {
+                roomSvc.updateRoomStatus(reservation.getRoomId(), "AVAILABLE");
+            }
+        }
+
         return new JSONObject()
                 .put("message",       "Payment processed")
                 .put("paymentStatus", newStatus)

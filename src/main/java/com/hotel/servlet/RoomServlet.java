@@ -38,11 +38,12 @@ public class RoomServlet extends BaseServlet {
         }
     }
 
+
+
     @Override
     protected void doPut(HttpServletRequest req,
                          HttpServletResponse res) throws IOException {
         if (!isAuthenticated(req)) { sendError(res,401,"Unauthorized"); return; }
-        if (!isAdmin(req)) { sendError(res,403,"Admin only"); return; }
         try {
             // PUT /api/rooms/{id}/status
             String path    = req.getPathInfo(); // /{id}/status
@@ -50,6 +51,12 @@ public class RoomServlet extends BaseServlet {
             int roomId     = Integer.parseInt(parts[1]);
             String body    = readBody(req);
             String status  = new JSONObject(body).getString("roomStatus");
+
+            // All authenticated staff may mark a room AVAILABLE (e.g. after checkout).
+            // Only admins may set OCCUPIED or MAINTENANCE.
+            if (!"AVAILABLE".equals(status) && !isAdmin(req)) {
+                sendError(res, 403, "Admin only"); return;
+            }
             sendJson(res, 200, service.updateRoomStatus(roomId, status));
         } catch (IllegalArgumentException e) {
             sendError(res, 400, e.getMessage());
