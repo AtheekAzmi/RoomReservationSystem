@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Staff — Hotel System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary:#1a3c5e; --primary-lt:#2e6da4; --accent:#e8a020; --sidebar:250px; }
+        * { box-sizing:border-box; }
+        body { background:#f0f4f8; font-family:'DM Sans',sans-serif; margin:0; padding:0; }
+
+        /* ── Sidebar ── */
+        .sidebar { position:fixed;top:0;left:0;width:var(--sidebar);height:100vh;background:var(--primary);z-index:1000;overflow-y:auto;display:flex;flex-direction:column; }
+        .sidebar .nav-link { color:rgba(255,255,255,.72);padding:.65rem 1rem;display:flex;align-items:center;gap:.75rem;font-size:.9rem;border-left:3px solid transparent;transition:all .2s;text-decoration:none; }
+        .sidebar .nav-link:hover,.sidebar .nav-link.active { background:rgba(255,255,255,.12);color:#fff;border-left-color:var(--accent); }
+
+        /* ── Layout ── */
+        .main-content { margin-left:var(--sidebar);min-height:100vh;display:flex;flex-direction:column; }
+        .topbar { background:#fff;padding:.875rem 1.5rem;border-bottom:1px solid #e0e0e0;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:999;flex-shrink:0; }
+        .content-area { padding:1.5rem;flex:1; }
+
+        /* ── Stat Boxes ── */
+        .stat-box { background:#fff;border-radius:14px;padding:1.25rem;height:100%;box-shadow:0 2px 10px rgba(0,0,0,.06);display:flex;align-items:center;gap:1rem;border-left:4px solid transparent;transition:all .2s; }
+        .stat-box:hover { transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.1); }
+        .stat-box.blue { border-left-color:#1565c0; } .stat-box.green { border-left-color:#2e7d32; }
+        .stat-box.red { border-left-color:#c62828; }   .stat-box.gray { border-left-color:#546e7a; }
+        .stat-ic { width:50px;height:50px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0; }
+
+        /* ── Card Box ── */
+        .card-box { background:#fff;border-radius:14px;padding:1.5rem;box-shadow:0 2px 10px rgba(0,0,0,.06); }
+        .card-box-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;padding-bottom:.875rem;border-bottom:2px solid #f0f4f8; }
+        .card-box-header h6 { margin:0;font-weight:700;color:var(--primary);font-size:1rem;font-family:'Playfair Display',serif; }
+
+        /* ── Search bar ── */
+        .search-bar { background:linear-gradient(135deg,#1a3c5e,#2e6da4);border-radius:14px;padding:1.25rem 1.5rem;color:#fff;margin-bottom:1.5rem; }
+        .search-bar .form-control,.search-bar .form-select { background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.3);color:#fff;border-radius:8px; }
+        .search-bar .form-control::placeholder { color:rgba(255,255,255,.55); }
+        .search-bar .form-control:focus,.search-bar .form-select:focus { background:rgba(255,255,255,.22);border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,160,32,.25);color:#fff;outline:none; }
+        .search-bar .form-select option { background:#1a3c5e;color:#fff; }
+
+        /* ── Staff Avatar ── */
+        .staff-avatar { width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;color:#fff;flex-shrink:0; }
+
+        /* ── Table ── */
+        .table thead th { background:#f8fafc;color:#555;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.6px;border-bottom:2px solid #e0e8f0;white-space:nowrap; }
+        .table tbody td { vertical-align:middle;font-size:.875rem;border-color:#f4f8ff; }
+        .table tbody tr:hover { background:#f8faff; }
+
+        /* ── Badges ── */
+        .role-badge { display:inline-flex;align-items:center;gap:.3rem;padding:.25rem .7rem;border-radius:20px;font-size:.73rem;font-weight:700;letter-spacing:.3px; }
+        .role-admin { background:#fee2e2;color:#991b1b; }
+        .role-staff { background:#dbeafe;color:#1e40af; }
+        .status-badge { display:inline-flex;align-items:center;gap:.3rem;padding:.25rem .7rem;border-radius:20px;font-size:.73rem;font-weight:700;letter-spacing:.3px; }
+        .status-active { background:#d1fae5;color:#065f46; }
+        .status-inactive { background:#f3f4f6;color:#374151; }
+
+        /* ── Modal ── */
+        .modal-header { background:var(--primary);color:#fff;border-radius:14px 14px 0 0; }
+        .modal-header .btn-close { filter:invert(1); }
+        .modal-content { border-radius:14px;border:none;box-shadow:0 20px 60px rgba(0,0,0,.2); }
+
+        /* ── Buttons ── */
+        .btn-hotel { background:linear-gradient(135deg,#1a3c5e,#2e6da4);color:#fff;border:none;border-radius:10px;font-weight:600;transition:all .2s;letter-spacing:.3px; }
+        .btn-hotel:hover { background:linear-gradient(135deg,#152f4a,#245a8a);color:#fff;transform:translateY(-1px);box-shadow:0 4px 12px rgba(26,60,94,.3); }
+        .btn-hotel:disabled { opacity:.6;transform:none; }
+        .form-control:focus,.form-select:focus { border-color:#2e6da4;box-shadow:0 0 0 3px rgba(46,109,164,.15); }
+
+        @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+        .fade-in { animation:fadeIn .3s ease forwards; }
+        @media(max-width:768px) { .sidebar{transform:translateX(-100%);} .main-content{margin-left:0;} }
+    </style>
+</head>
+<body>
+
+<div class="sidebar" id="sidebar"></div>
+
+<div class="main-content">
+
+    <!-- Topbar -->
+    <div class="topbar">
+        <div class="d-flex align-items-center gap-3">
+            <a href="dashboard.html" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Dashboard
+            </a>
+            <h5 class="mb-0" style="color:var(--primary);font-weight:700;font-family:'Playfair Display',serif">
+                <i class="bi bi-person-badge me-2"></i>Staff Management
+            </h5>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span class="text-muted" style="font-size:.85rem">
+                <i class="bi bi-person-circle me-1"></i><span id="topbarUser"></span>
+            </span>
+            <span class="badge bg-danger" id="topbarRole"></span>
+        </div>
+    </div>
+
+    <div class="content-area">
+
+        <!-- Stat Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-xl-3">
+                <div class="stat-box blue">
+                    <div class="stat-ic" style="background:#e3f2fd;color:#1565c0"><i class="bi bi-people"></i></div>
+                    <div>
+                        <div class="fs-4 fw-bold" id="st-total">—</div>
+                        <div class="text-muted" style="font-size:.78rem">Total Staff</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-xl-3">
+                <div class="stat-box green">
+                    <div class="stat-ic" style="background:#d1fae5;color:#065f46"><i class="bi bi-person-check"></i></div>
+                    <div>
+                        <div class="fs-4 fw-bold" id="st-active">—</div>
+                        <div class="text-muted" style="font-size:.78rem">Active</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-xl-3">
+                <div class="stat-box red">
+                    <div class="stat-ic" style="background:#fee2e2;color:#c62828"><i class="bi bi-shield-lock"></i></div>
+                    <div>
+                        <div class="fs-4 fw-bold" id="st-admins">—</div>
+                        <div class="text-muted" style="font-size:.78rem">Administrators</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-xl-3">
+                <div class="stat-box gray">
+                    <div class="stat-ic" style="background:#eceff1;color:#546e7a"><i class="bi bi-person-dash"></i></div>
+                    <div>
+                        <div class="fs-4 fw-bold" id="st-inactive">—</div>
+                        <div class="text-muted" style="font-size:.78rem">Inactive</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search & Filter bar -->
+        <div class="search-bar mb-4">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label mb-1" style="font-size:.8rem;opacity:.8">Search Staff</label>
+                    <div class="input-group">
+                        <span class="input-group-text" style="background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.3);color:#fff">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" id="searchInput" class="form-control"
+                               placeholder="Name, username, email…" oninput="doFilter()">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label mb-1" style="font-size:.8rem;opacity:.8">Role</label>
+                    <select id="roleFilter" class="form-select" onchange="doFilter()">
+                        <option value="">All Roles</option>
+                        <option value="ADMIN">Admin</option>
+                        <option value="STAFF">Staff</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label mb-1" style="font-size:.8rem;opacity:.8">Status</label>
+                    <select id="statusFilter" class="form-select" onchange="doFilter()">
+                        <option value="">All Status</option>
+                        <option value="ACTIVE">Active</option>
+                        <option value="INACTIVE">Inactive</option>
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex gap-2 justify-content-end">
+                    <button type="button" class="btn btn-outline-light btn-sm" onclick="loadStaff()">
+                        <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                    </button>
+                    <button type="button" class="btn btn-warning fw-bold" onclick="openAddModal()">
+                        <i class="bi bi-person-plus me-1"></i>Add Staff Member
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Staff Table -->
+        <div class="card-box">
+            <div class="card-box-header">
+                <h6><i class="bi bi-table me-2"></i>Staff Members</h6>
+                <span id="tblInfo" class="text-muted" style="font-size:.8rem"></span>
+            </div>
+            <div id="staffWrap">
+                <div class="text-center py-5 text-muted">
+                    <div class="spinner-border text-primary mb-2"></div>
+                    <p class="mb-0">Loading staff…</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ══════════ ADD STAFF MODAL ══════════ -->
+<div class="modal fade" id="addModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-person-plus me-2"></i>Add New Staff Member</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">First Name <span class="text-danger">*</span></label>
+                        <input type="text" id="add_firstName" class="form-control" placeholder="John">
+                        <div class="invalid-feedback">First name is required.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Last Name <span class="text-danger">*</span></label>
+                        <input type="text" id="add_lastName" class="form-control" placeholder="Doe">
+                        <div class="invalid-feedback">Last name is required.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Username <span class="text-danger">*</span></label>
+                        <input type="text" id="add_username" class="form-control" placeholder="johndoe">
+                        <div class="invalid-feedback">Username required (min 3 chars).</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Password <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <input type="password" id="add_password" class="form-control" placeholder="Min 6 characters">
+                            <button type="button" class="btn btn-outline-secondary" onclick="togglePass('add_password','add_eyeIcon')">
+                                <i class="bi bi-eye" id="add_eyeIcon"></i>
+                            </button>
+                        </div>
+                        <div class="invalid-feedback">Password required (min 6 chars).</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Email</label>
+                        <input type="email" id="add_email" class="form-control" placeholder="john@hotel.com">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Phone</label>
+                        <input type="text" id="add_phone" class="form-control" placeholder="+1 234 567 8900">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Role <span class="text-danger">*</span></label>
+                        <select id="add_role" class="form-select">
+                            <option value="STAFF">Staff</option>
+                            <option value="ADMIN">Admin</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Status</label>
+                        <select id="add_status" class="form-select">
+                            <option value="ACTIVE">Active</option>
+                            <option value="INACTIVE">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="addErr" class="alert alert-danger d-none mt-3 py-2" style="font-size:.85rem"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" id="btnAdd" class="btn btn-hotel px-4" onclick="submitAdd()">
+                    <span id="btnAddText"><i class="bi bi-check-circle me-1"></i>Add Staff</span>
+                    <span id="btnAddSpin" class="d-none">
+                        <span class="spinner-border spinner-border-sm me-1"></span>Saving…
+                    </span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════ EDIT STAFF MODAL ══════════ -->
+<div class="modal fade" id="editModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Edit Staff Member</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <input type="hidden" id="edit_id">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">First Name <span class="text-danger">*</span></label>
+                        <input type="text" id="edit_firstName" class="form-control">
+                        <div class="invalid-feedback">First name is required.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Last Name <span class="text-danger">*</span></label>
+                        <input type="text" id="edit_lastName" class="form-control">
+                        <div class="invalid-feedback">Last name is required.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Username <span class="text-danger">*</span></label>
+                        <input type="text" id="edit_username" class="form-control">
+                        <div class="invalid-feedback">Username required.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">New Password
+                            <small class="text-muted fw-normal">(leave blank to keep)</small>
+                        </label>
+                        <div class="input-group">
+                            <input type="password" id="edit_password" class="form-control" placeholder="Leave blank to keep current">
+                            <button type="button" class="btn btn-outline-secondary" onclick="togglePass('edit_password','edit_eyeIcon')">
+                                <i class="bi bi-eye" id="edit_eyeIcon"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Email</label>
+                        <input type="email" id="edit_email" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Phone</label>
+                        <input type="text" id="edit_phone" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Role <span class="text-danger">*</span></label>
+                        <select id="edit_role" class="form-select">
+                            <option value="STAFF">Staff</option>
+                            <option value="ADMIN">Admin</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Status</label>
+                        <select id="edit_status" class="form-select">
+                            <option value="ACTIVE">Active</option>
+                            <option value="INACTIVE">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="editErr" class="alert alert-danger d-none mt-3 py-2" style="font-size:.85rem"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" id="btnEdit" class="btn btn-hotel px-4" onclick="submitEdit()">
+                    <span id="btnEditText"><i class="bi bi-check-circle me-1"></i>Save Changes</span>
+                    <span id="btnEditSpin" class="d-none">
+                        <span class="spinner-border spinner-border-sm me-1"></span>Saving…
+                    </span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════ DELETE CONFIRM MODAL ══════════ -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" style="background:#c62828">
+                <h5 class="modal-title text-white"><i class="bi bi-exclamation-triangle me-2"></i>Confirm Delete</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4 text-center">
+                <div style="width:64px;height:64px;background:#fee2e2;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:1.75rem;color:#c62828">
+                    <i class="bi bi-person-x"></i>
+                </div>
+                <h6 class="fw-bold mb-2">Delete Staff Member?</h6>
+                <p class="text-muted mb-0">
+                    Are you sure you want to delete <strong id="del_name"></strong>?
+                    <br><small>This action cannot be undone.</small>
+                </p>
+            </div>
+            <div class="modal-footer justify-content-center gap-2">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" id="btnDel" class="btn btn-danger px-4" onclick="submitDelete()">
+                    <span id="btnDelText"><i class="bi bi-trash me-1"></i>Delete</span>
+                    <span id="btnDelSpin" class="d-none">
+                        <span class="spinner-border spinner-border-sm me-1"></span>Deleting…
+                    </span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════ VIEW PROFILE MODAL ══════════ -->
+<div class="modal fade" id="viewModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-person-circle me-2"></i>Staff Profile</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4" id="viewBody">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/app.js"></script>
+<script>
+    'use strict';
+
+    var allStaff = [];
+    var delTargetId = 0;
+
+    function getModal(id){ return bootstrap.Modal.getOrCreateInstance(document.getElementById(id)); }
+
+    document.addEventListener('DOMContentLoaded', function(){
+        initPage('staff.html');
+
+        // Admin-only guard
+        if (!Auth.isAdmin()){
+            document.querySelector('.content-area').innerHTML =
+                '<div class="text-center py-5">' +
+                '<div style="width:80px;height:80px;background:#fee2e2;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:2rem;color:#c62828"><i class="bi bi-shield-x"></i></div>' +
+                '<h4 style="color:#c62828" class="fw-bold">Access Denied</h4>' +
+                '<p class="text-muted">Only administrators can access the Staff Management page.</p>' +
+                '<a href="dashboard.html" class="btn btn-hotel px-4 mt-2"><i class="bi bi-arrow-left me-1"></i>Back to Dashboard</a>' +
+                '</div>';
+            return;
+        }
+
+        loadStaff();
+    });
+
+    // ══════════════════════════════════════════════
+    //  LOAD STAFF
+    // ══════════════════════════════════════════════
+    async function loadStaff(){
+        document.getElementById('staffWrap').innerHTML =
+            '<div class="text-center py-5 text-muted">' +
+            '<div class="spinner-border text-primary mb-2"></div>' +
+            '<p class="mb-0">Loading staff members…</p></div>';
+
+        try {
+            var data = await API.get('api/staff');
+            if (data === null) return;
+            allStaff = Array.isArray(data) ? data : [];
+            updateStats(allStaff);
+            renderStaff(allStaff);
+        } catch(err){
+            document.getElementById('staffWrap').innerHTML =
+                '<div class="text-center py-5 text-danger">' +
+                '<i class="bi bi-exclamation-triangle" style="font-size:2.5rem"></i>' +
+                '<p class="mt-2 fw-semibold">Failed to load staff</p>' +
+                '<p class="text-muted" style="font-size:.85rem">' + err.message + '</p>' +
+                '<button type="button" class="btn btn-outline-primary btn-sm mt-1" onclick="loadStaff()">' +
+                '<i class="bi bi-arrow-clockwise me-1"></i>Retry</button></div>';
+        }
+    }
+
+    // ── Stats ─────────────────────────────────────────────────────
+    function updateStats(list){
+        var active   = list.filter(function(s){ return (s.status||'ACTIVE')==='ACTIVE'; }).length;
+        var inactive = list.filter(function(s){ return s.status==='INACTIVE'; }).length;
+        var admins   = list.filter(function(s){ return (s.role||'').toUpperCase()==='ADMIN'; }).length;
+        document.getElementById('st-total').textContent    = list.length;
+        document.getElementById('st-active').textContent   = active;
+        document.getElementById('st-admins').textContent   = admins;
+        document.getElementById('st-inactive').textContent = inactive;
+    }
+
+    // ── Render Table ──────────────────────────────────────────────
+    function renderStaff(list){
+        var info = document.getElementById('tblInfo');
+        if (!list.length){
+            document.getElementById('staffWrap').innerHTML =
+                '<div class="text-center py-5 text-muted">' +
+                '<i class="bi bi-people" style="font-size:3rem;opacity:.25"></i>' +
+                '<p class="mt-2 mb-0">No staff members found</p></div>';
+            info.textContent = '';
+            return;
+        }
+
+        var currentUserId = parseInt(Auth.get('staffId') || '0');
+
+        var rows = list.map(function(s){
+            var id        = s.staffId || s.id || 0;
+            var firstName = s.firstName || s.first_name || '';
+            var lastName  = s.lastName  || s.last_name  || '';
+            var fullName  = s.fullName  || (firstName + ' ' + lastName).trim() || s.username || '—';
+            var username  = s.username  || '—';
+            var role      = (s.role     || 'STAFF').toUpperCase();
+            var status    = (s.status   || 'ACTIVE').toUpperCase();
+            var email     = s.email     || '—';
+            var phone     = s.phone     || s.phoneNumber || '—';
+            var initials  = ((firstName[0]||'') + (lastName[0]||'')).toUpperCase() || '?';
+            var avatarColor = role === 'ADMIN' ? '#c62828' : '#1565c0';
+            var isSelf    = id === currentUserId;
+
+            return '<tr class="fade-in">' +
+                '<td>' +
+                '<div class="d-flex align-items-center gap-2">' +
+                '<div class="staff-avatar" style="background:' + avatarColor + '">' + initials + '</div>' +
+                '<div>' +
+                '<div class="fw-semibold" style="font-size:.875rem">' + fullName + (isSelf ? ' <span class="badge bg-secondary" style="font-size:.65rem">You</span>' : '') + '</div>' +
+                '<div class="text-muted" style="font-size:.75rem">' + email + '</div>' +
+                '</div>' +
+                '</div>' +
+                '</td>' +
+                '<td><code style="font-size:.8rem;color:var(--primary-lt)">@' + username + '</code></td>' +
+                '<td><span class="role-badge ' + (role==='ADMIN'?'role-admin':'role-staff') + '">' +
+                '<i class="bi ' + (role==='ADMIN'?'bi-shield-lock':'bi-person') + '"></i>' + role + '</span></td>' +
+                '<td style="font-size:.82rem">' + phone + '</td>' +
+                '<td><span class="status-badge ' + (status==='ACTIVE'?'status-active':'status-inactive') + '">' +
+                '<i class="bi ' + (status==='ACTIVE'?'bi-circle-fill':'bi-circle') + '" style="font-size:.5rem"></i>' +
+                status + '</span></td>' +
+                '<td>' +
+                '<div class="d-flex gap-1">' +
+                '<button type="button" class="btn btn-sm btn-outline-primary" title="View Profile" onclick="viewStaff(' + id + ')">' +
+                '<i class="bi bi-eye"></i></button>' +
+                '<button type="button" class="btn btn-sm btn-outline-secondary" title="Edit" onclick="openEditModal(' + id + ')">' +
+                '<i class="bi bi-pencil"></i></button>' +
+                (isSelf ? '' :
+                    '<button type="button" class="btn btn-sm btn-outline-danger" title="Delete" onclick="openDeleteModal(' + id + ',\'' + escQ(fullName) + '\')">' +
+                    '<i class="bi bi-trash"></i></button>') +
+                '</div>' +
+                '</td>' +
+                '</tr>';
+        }).join('');
+
+        document.getElementById('staffWrap').innerHTML =
+            '<div class="table-responsive">' +
+            '<table class="table table-hover mb-0"><thead><tr>' +
+            '<th>Staff Member</th><th>Username</th><th>Role</th><th>Phone</th><th>Status</th>' +
+            '<th style="width:130px">Actions</th>' +
+            '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+
+        info.textContent = 'Showing ' + list.length + ' of ' + allStaff.length + ' staff members';
+    }
+
+    // ── Filter ────────────────────────────────────────────────────
+    function doFilter(){
+        var q  = document.getElementById('searchInput').value.toLowerCase();
+        var rf = document.getElementById('roleFilter').value.toUpperCase();
+        var sf = document.getElementById('statusFilter').value.toUpperCase();
+
+        var f = allStaff.filter(function(s){
+            var name  = ((s.firstName||'') + ' ' + (s.lastName||'') + ' ' + (s.fullName||'') + ' ' + (s.username||'') + ' ' + (s.email||'')).toLowerCase();
+            var role   = (s.role   || 'STAFF').toUpperCase();
+            var status = (s.status || 'ACTIVE').toUpperCase();
+            return (!q || name.includes(q)) &&
+                   (!rf || role === rf) &&
+                   (!sf || status === sf);
+        });
+        renderStaff(f);
+    }
+
+    // ══════════════════════════════════════════════
+    //  ADD STAFF
+    // ══════════════════════════════════════════════
+    function openAddModal(){
+        ['add_firstName','add_lastName','add_username','add_email','add_phone'].forEach(function(id){
+            document.getElementById(id).value = '';
+            document.getElementById(id).classList.remove('is-invalid');
+        });
+        document.getElementById('add_password').value = '';
+        document.getElementById('add_password').classList.remove('is-invalid');
+        document.getElementById('add_role').value   = 'STAFF';
+        document.getElementById('add_status').value = 'ACTIVE';
+        document.getElementById('addErr').classList.add('d-none');
+        getModal('addModal').show();
+    }
+
+    async function submitAdd(){
+        var firstName = document.getElementById('add_firstName').value.trim();
+        var lastName  = document.getElementById('add_lastName').value.trim();
+        var username  = document.getElementById('add_username').value.trim();
+        var password  = document.getElementById('add_password').value;
+        var email     = document.getElementById('add_email').value.trim();
+        var phone     = document.getElementById('add_phone').value.trim();
+        var role      = document.getElementById('add_role').value;
+        var status    = document.getElementById('add_status').value;
+
+        var valid = true;
+        if (!firstName){ document.getElementById('add_firstName').classList.add('is-invalid'); valid = false; }
+        else            { document.getElementById('add_firstName').classList.remove('is-invalid'); }
+        if (!lastName) { document.getElementById('add_lastName').classList.add('is-invalid'); valid = false; }
+        else           { document.getElementById('add_lastName').classList.remove('is-invalid'); }
+        if (username.length < 3){ document.getElementById('add_username').classList.add('is-invalid'); valid = false; }
+        else                    { document.getElementById('add_username').classList.remove('is-invalid'); }
+        if (password.length < 6){ document.getElementById('add_password').classList.add('is-invalid'); valid = false; }
+        else                    { document.getElementById('add_password').classList.remove('is-invalid'); }
+        if (!valid) return;
+
+        setBL('btnAdd','btnAddText','btnAddSpin', true);
+        document.getElementById('addErr').classList.add('d-none');
+
+        try {
+            await API.post('api/staff', {
+                firstName: firstName,
+                lastName:  lastName,
+                username:  username,
+                password:  password,
+                email:     email || null,
+                phone:     phone || null,
+                role:      role,
+                status:    status,
+                fullName:  firstName + ' ' + lastName
+            });
+            getModal('addModal').hide();
+            Toast.show('Staff member added successfully', 'success');
+            loadStaff();
+        } catch(err){
+            var e = document.getElementById('addErr');
+            e.textContent = err.message || 'Failed to add staff';
+            e.classList.remove('d-none');
+        } finally {
+            setBL('btnAdd','btnAddText','btnAddSpin', false);
+        }
+    }
+
+    // ══════════════════════════════════════════════
+    //  EDIT STAFF
+    // ══════════════════════════════════════════════
+    function openEditModal(id){
+        var s = allStaff.find(function(x){ return (x.staffId||x.id) === id; });
+        if (!s){ Toast.show('Staff not found','error'); return; }
+
+        document.getElementById('edit_id').value        = id;
+        document.getElementById('edit_firstName').value = s.firstName || s.first_name || '';
+        document.getElementById('edit_lastName').value  = s.lastName  || s.last_name  || '';
+        document.getElementById('edit_username').value  = s.username  || '';
+        document.getElementById('edit_password').value  = '';
+        document.getElementById('edit_email').value     = s.email     || '';
+        document.getElementById('edit_phone').value     = s.phone     || s.phoneNumber || '';
+        document.getElementById('edit_role').value      = (s.role     || 'STAFF').toUpperCase();
+        document.getElementById('edit_status').value    = (s.status   || 'ACTIVE').toUpperCase();
+
+        ['edit_firstName','edit_lastName','edit_username'].forEach(function(fid){
+            document.getElementById(fid).classList.remove('is-invalid');
+        });
+        document.getElementById('editErr').classList.add('d-none');
+        getModal('editModal').show();
+    }
+
+    async function submitEdit(){
+        var id        = parseInt(document.getElementById('edit_id').value);
+        var firstName = document.getElementById('edit_firstName').value.trim();
+        var lastName  = document.getElementById('edit_lastName').value.trim();
+        var username  = document.getElementById('edit_username').value.trim();
+        var password  = document.getElementById('edit_password').value;
+        var email     = document.getElementById('edit_email').value.trim();
+        var phone     = document.getElementById('edit_phone').value.trim();
+        var role      = document.getElementById('edit_role').value;
+        var status    = document.getElementById('edit_status').value;
+
+        var valid = true;
+        if (!firstName){ document.getElementById('edit_firstName').classList.add('is-invalid'); valid = false; }
+        else            { document.getElementById('edit_firstName').classList.remove('is-invalid'); }
+        if (!lastName) { document.getElementById('edit_lastName').classList.add('is-invalid'); valid = false; }
+        else           { document.getElementById('edit_lastName').classList.remove('is-invalid'); }
+        if (username.length < 3){ document.getElementById('edit_username').classList.add('is-invalid'); valid = false; }
+        else                    { document.getElementById('edit_username').classList.remove('is-invalid'); }
+        if (!valid) return;
+
+        setBL('btnEdit','btnEditText','btnEditSpin', true);
+        document.getElementById('editErr').classList.add('d-none');
+
+        var payload = {
+            firstName: firstName,
+            lastName:  lastName,
+            username:  username,
+            email:     email || null,
+            phone:     phone || null,
+            role:      role,
+            status:    status,
+            fullName:  firstName + ' ' + lastName
+        };
+        if (password && password.length >= 6) payload.password = password;
+
+        try {
+            await API.put('api/staff/' + id, payload);
+            getModal('editModal').hide();
+            Toast.show('Staff member updated successfully', 'success');
+            loadStaff();
+        } catch(err){
+            var e = document.getElementById('editErr');
+            e.textContent = err.message || 'Failed to update staff';
+            e.classList.remove('d-none');
+        } finally {
+            setBL('btnEdit','btnEditText','btnEditSpin', false);
+        }
+    }
+
+    // ══════════════════════════════════════════════
+    //  DELETE STAFF
+    // ══════════════════════════════════════════════
+    function openDeleteModal(id, name){
+        delTargetId = id;
+        document.getElementById('del_name').textContent = name;
+        document.getElementById('deleteModal').querySelector('.btn-danger').disabled = false;
+        document.getElementById('btnDelSpin').classList.add('d-none');
+        document.getElementById('btnDelText').classList.remove('d-none');
+        getModal('deleteModal').show();
+    }
+
+    async function submitDelete(){
+        if (!delTargetId) return;
+        setBL('btnDel','btnDelText','btnDelSpin', true);
+        try {
+            await API.delete('api/staff/' + delTargetId);
+            getModal('deleteModal').hide();
+            Toast.show('Staff member removed', 'success');
+            loadStaff();
+        } catch(err){
+            Toast.show(err.message || 'Failed to delete staff', 'error');
+        } finally {
+            setBL('btnDel','btnDelText','btnDelSpin', false);
+        }
+    }
+
+    // ══════════════════════════════════════════════
+    //  VIEW PROFILE
+    // ══════════════════════════════════════════════
+    function viewStaff(id){
+        var s = allStaff.find(function(x){ return (x.staffId||x.id) === id; });
+        if (!s){ Toast.show('Staff not found','error'); return; }
+
+        var firstName = s.firstName || s.first_name || '';
+        var lastName  = s.lastName  || s.last_name  || '';
+        var fullName  = s.fullName  || (firstName + ' ' + lastName).trim() || s.username || '—';
+        var role      = (s.role   || 'STAFF').toUpperCase();
+        var status    = (s.status || 'ACTIVE').toUpperCase();
+        var initials  = ((firstName[0]||'') + (lastName[0]||'')).toUpperCase() || '?';
+        var avatarColor = role === 'ADMIN' ? '#c62828' : '#1565c0';
+
+        document.getElementById('viewBody').innerHTML =
+            '<div class="text-center mb-4">' +
+            '<div style="width:80px;height:80px;background:' + avatarColor + ';border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2rem;color:#fff;font-weight:700;margin:0 auto .75rem">' + initials + '</div>' +
+            '<h5 class="fw-bold mb-1">' + fullName + '</h5>' +
+            '<span class="role-badge ' + (role==='ADMIN'?'role-admin':'role-staff') + '">' +
+            '<i class="bi ' + (role==='ADMIN'?'bi-shield-lock':'bi-person') + '"></i>' + role + '</span>' +
+            '</div>' +
+            '<div style="background:#f8fafc;border-radius:12px;padding:1rem;border:1px solid #e8edf5">' +
+            profileRow('bi-person','Username', '@' + (s.username||'—')) +
+            profileRow('bi-envelope','Email', s.email||'—') +
+            profileRow('bi-telephone','Phone', s.phone||s.phoneNumber||'—') +
+            profileRow('bi-circle-fill','Status',
+                '<span class="status-badge ' + (status==='ACTIVE'?'status-active':'status-inactive') + '">' +
+                status + '</span>') +
+            (s.createdAt ? profileRow('bi-calendar3','Joined', fmtDate(s.createdAt)) : '') +
+            '</div>';
+
+        getModal('viewModal').show();
+    }
+
+    function profileRow(icon, label, value){
+        return '<div style="display:flex;align-items:center;justify-content:space-between;padding:.6rem 0;border-bottom:1px solid #f0f4f8">' +
+            '<span style="color:#6b7280;font-size:.85rem"><i class="bi ' + icon + ' me-2"></i>' + label + '</span>' +
+            '<span style="font-weight:600;color:#1a3c5e;font-size:.85rem">' + value + '</span>' +
+            '</div>';
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────
+    function togglePass(inputId, iconId){
+        var inp = document.getElementById(inputId);
+        var ico = document.getElementById(iconId);
+        inp.type = inp.type === 'password' ? 'text' : 'password';
+        ico.className = inp.type === 'password' ? 'bi bi-eye' : 'bi bi-eye-slash';
+    }
+
+    function setBL(btn, txt, spin, on){
+        document.getElementById(txt).classList.toggle('d-none', on);
+        document.getElementById(spin).classList.toggle('d-none', !on);
+        document.getElementById(btn).disabled = on;
+    }
+
+    function escQ(s){ return String(s).replace(/'/g,"&#39;"); }
+</script>
+</body>
+</html>

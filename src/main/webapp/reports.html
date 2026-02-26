@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Reports — Hotel System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary:#1a3c5e; --primary-lt:#2e6da4; --accent:#e8a020; --sidebar:250px; }
+        * { box-sizing:border-box; }
+        body { background:#f0f4f8; font-family:'DM Sans',sans-serif; margin:0; padding:0; }
+
+        /* ── Sidebar ── */
+        .sidebar { position:fixed;top:0;left:0;width:var(--sidebar);height:100vh;background:var(--primary);z-index:1000;overflow-y:auto;display:flex;flex-direction:column; }
+        .sidebar .nav-link { color:rgba(255,255,255,.72);padding:.65rem 1rem;display:flex;align-items:center;gap:.75rem;font-size:.9rem;border-left:3px solid transparent;transition:all .2s;text-decoration:none; }
+        .sidebar .nav-link:hover,.sidebar .nav-link.active { background:rgba(255,255,255,.12);color:#fff;border-left-color:var(--accent); }
+
+        /* ── Layout ── */
+        .main-content { margin-left:var(--sidebar);min-height:100vh;display:flex;flex-direction:column; }
+        .topbar { background:#fff;padding:.875rem 1.5rem;border-bottom:1px solid #e0e0e0;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:999;flex-shrink:0; }
+        .content-area { padding:1.5rem;flex:1; }
+
+        /* ── Filter Bar ── */
+        .filter-bar { background:linear-gradient(135deg,#1a3c5e,#2e6da4);border-radius:14px;padding:1.25rem 1.5rem;color:#fff;margin-bottom:1.5rem; }
+        .filter-bar .form-control,.filter-bar .form-select { background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.3);color:#fff;border-radius:8px; }
+        .filter-bar .form-control::-webkit-calendar-picker-indicator { filter:invert(1);opacity:.7; }
+        .filter-bar .form-control::placeholder { color:rgba(255,255,255,.55); }
+        .filter-bar .form-control:focus,.filter-bar .form-select:focus { background:rgba(255,255,255,.22);border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,160,32,.25);color:#fff;outline:none; }
+        .filter-bar label { font-size:.8rem;opacity:.85;margin-bottom:.3rem; }
+
+        /* ── Stat Cards ── */
+        .stat-box { background:#fff;border-radius:14px;padding:1.25rem;height:100%;box-shadow:0 2px 10px rgba(0,0,0,.06);display:flex;align-items:center;gap:1rem;border-left:4px solid transparent;transition:all .2s; }
+        .stat-box:hover { transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.1); }
+        .stat-box.blue { border-left-color:#1565c0; }  .stat-box.green  { border-left-color:#2e7d32; }
+        .stat-box.orange { border-left-color:#e65100; } .stat-box.purple { border-left-color:#6a1b9a; }
+        .stat-box.gold { border-left-color:#c9922a; }   .stat-box.red    { border-left-color:#c62828; }
+        .stat-ic { width:50px;height:50px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0; }
+
+        /* ── Card Box ── */
+        .card-box { background:#fff;border-radius:14px;padding:1.5rem;box-shadow:0 2px 10px rgba(0,0,0,.06); }
+        .card-box-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;padding-bottom:.875rem;border-bottom:2px solid #f0f4f8; }
+        .card-box-header h6 { margin:0;font-weight:700;color:var(--primary);font-size:1rem;font-family:'Playfair Display',serif; }
+
+        /* ── Section header ── */
+        .section-hdr { display:flex;align-items:center;gap:.5rem;margin-bottom:1rem;color:var(--primary);font-weight:700;font-size:.95rem;font-family:'Playfair Display',serif; }
+        .section-hdr::after { content:'';flex:1;height:2px;background:#f0f4f8;border-radius:2px; }
+
+        /* ── Progress Bars ── */
+        .stat-bar-row { margin-bottom:.875rem; }
+        .stat-bar-label { display:flex;justify-content:space-between;align-items:center;margin-bottom:.35rem;font-size:.82rem; }
+        .stat-bar-label .lbl { font-weight:600;color:#333; }
+        .stat-bar-label .val { color:#6b7280; }
+        .progress { height:8px;border-radius:4px;background:#f0f4f8; }
+
+        /* ── Table ── */
+        .table thead th { background:#f8fafc;color:#555;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.6px;border-bottom:2px solid #e0e8f0;white-space:nowrap; }
+        .table tbody td { vertical-align:middle;font-size:.875rem;border-color:#f4f8ff; }
+        .table tbody tr:hover { background:#f8faff; }
+
+        /* ── Metric box (inside card) ── */
+        .metric-box { background:#f8fafc;border:1px solid #e8edf5;border-radius:10px;padding:.875rem;text-align:center; }
+        .metric-val { font-family:'Playfair Display',serif;font-size:1.75rem;font-weight:700;color:var(--primary);line-height:1; }
+        .metric-lbl { font-size:.72rem;text-transform:uppercase;letter-spacing:.6px;color:#9ca3af;font-weight:700;margin-top:.35rem; }
+        .metric-sub { font-size:.78rem;color:#6b7280;margin-top:.2rem; }
+
+        /* ── Buttons ── */
+        .btn-hotel { background:linear-gradient(135deg,#1a3c5e,#2e6da4);color:#fff;border:none;border-radius:10px;font-weight:600;transition:all .2s; }
+        .btn-hotel:hover { background:linear-gradient(135deg,#152f4a,#245a8a);color:#fff;transform:translateY(-1px);box-shadow:0 4px 12px rgba(26,60,94,.3); }
+        .form-control:focus,.form-select:focus { border-color:#2e6da4;box-shadow:0 0 0 3px rgba(46,109,164,.15); }
+
+        @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+        .fade-in { animation:fadeIn .3s ease forwards; }
+        @media print {
+            .sidebar,.topbar,.filter-bar,.no-print { display:none!important; }
+            .main-content { margin-left:0!important; }
+            .card-box { box-shadow:none!important;border:1px solid #e0e0e0; }
+        }
+        @media(max-width:768px) { .sidebar{transform:translateX(-100%);} .main-content{margin-left:0;} }
+    </style>
+</head>
+<body>
+
+<div class="sidebar" id="sidebar"></div>
+
+<div class="main-content">
+
+    <!-- Topbar -->
+    <div class="topbar">
+        <div class="d-flex align-items-center gap-3">
+            <a href="dashboard.html" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Dashboard
+            </a>
+            <h5 class="mb-0" style="color:var(--primary);font-weight:700;font-family:'Playfair Display',serif">
+                <i class="bi bi-bar-chart-line me-2"></i>Reports &amp; Analytics
+            </h5>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span class="text-muted" style="font-size:.85rem">
+                <i class="bi bi-person-circle me-1"></i><span id="topbarUser"></span>
+            </span>
+            <span class="badge bg-secondary" id="topbarRole"></span>
+            <button type="button" class="btn btn-sm btn-outline-secondary no-print" onclick="loadReports()">
+                <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+            </button>
+            <button type="button" class="btn btn-sm btn-hotel no-print" onclick="window.print()">
+                <i class="bi bi-printer me-1"></i>Print
+            </button>
+        </div>
+    </div>
+
+    <div class="content-area">
+
+        <!-- Date Filter Bar -->
+        <div class="filter-bar no-print">
+            <div class="row g-2 align-items-end">
+                <div class="col-auto">
+                    <i class="bi bi-funnel me-1" style="opacity:.7"></i>
+                    <span style="font-weight:700;font-size:.9rem">Date Range Filter</span>
+                </div>
+                <div class="col-md-2">
+                    <label>From Date</label>
+                    <input type="date" id="fromDate" class="form-control form-control-sm">
+                </div>
+                <div class="col-md-2">
+                    <label>To Date</label>
+                    <input type="date" id="toDate" class="form-control form-control-sm">
+                </div>
+                <div class="col-auto d-flex gap-2">
+                    <button type="button" class="btn btn-warning btn-sm fw-bold" onclick="applyFilter()">
+                        <i class="bi bi-funnel-fill me-1"></i>Apply
+                    </button>
+                    <button type="button" class="btn btn-outline-light btn-sm" onclick="resetFilter()">
+                        <i class="bi bi-x-circle me-1"></i>Reset
+                    </button>
+                </div>
+                <div class="col-auto ms-auto">
+                    <div class="d-flex gap-1 flex-wrap">
+                        <button type="button" class="btn btn-sm btn-outline-light" onclick="setQuickRange(7)">7 Days</button>
+                        <button type="button" class="btn btn-sm btn-outline-light" onclick="setQuickRange(30)">30 Days</button>
+                        <button type="button" class="btn btn-sm btn-outline-light" onclick="setQuickRange(90)">90 Days</button>
+                        <button type="button" class="btn btn-sm btn-outline-light" onclick="setQuickRange(365)">1 Year</button>
+                    </div>
+                </div>
+            </div>
+            <div id="filterLabel" class="mt-2" style="font-size:.8rem;opacity:.75"></div>
+        </div>
+
+        <!-- Loading state -->
+        <div id="loadingWrap" class="text-center py-5">
+            <div class="spinner-border text-primary mb-2"></div>
+            <p class="text-muted mb-0">Loading report data…</p>
+        </div>
+
+        <!-- All report content (hidden until loaded) -->
+        <div id="reportContent" class="d-none">
+
+            <!-- ── REVENUE SUMMARY ── -->
+            <div class="section-hdr"><i class="bi bi-currency-dollar"></i>Revenue Overview</div>
+            <div class="row g-3 mb-4">
+                <div class="col-6 col-xl-3">
+                    <div class="stat-box gold">
+                        <div class="stat-ic" style="background:#fef3c7;color:#92400e"><i class="bi bi-currency-dollar"></i></div>
+                        <div>
+                            <div class="fs-4 fw-bold" id="rev-total">—</div>
+                            <div class="text-muted" style="font-size:.78rem">Total Revenue</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-xl-3">
+                    <div class="stat-box green">
+                        <div class="stat-ic" style="background:#d1fae5;color:#065f46"><i class="bi bi-check-circle"></i></div>
+                        <div>
+                            <div class="fs-4 fw-bold" id="rev-paid">—</div>
+                            <div class="text-muted" style="font-size:.78rem">Paid Bills</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-xl-3">
+                    <div class="stat-box red">
+                        <div class="stat-ic" style="background:#fee2e2;color:#991b1b"><i class="bi bi-clock-history"></i></div>
+                        <div>
+                            <div class="fs-4 fw-bold" id="rev-unpaid">—</div>
+                            <div class="text-muted" style="font-size:.78rem">Unpaid Bills</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-xl-3">
+                    <div class="stat-box blue">
+                        <div class="stat-ic" style="background:#e3f2fd;color:#1565c0"><i class="bi bi-graph-up-arrow"></i></div>
+                        <div>
+                            <div class="fs-4 fw-bold" id="rev-avg">—</div>
+                            <div class="text-muted" style="font-size:.78rem">Avg. Bill Value</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── RESERVATION STATS ── -->
+            <div class="section-hdr"><i class="bi bi-calendar-check"></i>Reservation Overview</div>
+            <div class="row g-3 mb-4">
+                <div class="col-6 col-xl-2">
+                    <div class="stat-box blue">
+                        <div class="stat-ic" style="background:#e3f2fd;color:#1565c0"><i class="bi bi-calendar3"></i></div>
+                        <div>
+                            <div class="fs-4 fw-bold" id="res-total">—</div>
+                            <div class="text-muted" style="font-size:.78rem">Total</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-xl-2">
+                    <div class="stat-box blue">
+                        <div class="stat-ic" style="background:#dbeafe;color:#1e40af"><i class="bi bi-calendar-check"></i></div>
+                        <div>
+                            <div class="fs-4 fw-bold" id="res-confirmed">—</div>
+                            <div class="text-muted" style="font-size:.78rem">Confirmed</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-xl-2">
+                    <div class="stat-box green">
+                        <div class="stat-ic" style="background:#d1fae5;color:#065f46"><i class="bi bi-door-open"></i></div>
+                        <div>
+                            <div class="fs-4 fw-bold" id="res-checkedin">—</div>
+                            <div class="text-muted" style="font-size:.78rem">Checked In</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-xl-2">
+                    <div class="stat-box gray" style="border-left-color:#546e7a">
+                        <div class="stat-ic" style="background:#eceff1;color:#546e7a"><i class="bi bi-box-arrow-right"></i></div>
+                        <div>
+                            <div class="fs-4 fw-bold" id="res-checkedout">—</div>
+                            <div class="text-muted" style="font-size:.78rem">Checked Out</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-xl-2">
+                    <div class="stat-box orange">
+                        <div class="stat-ic" style="background:#fff3e0;color:#e65100"><i class="bi bi-hourglass-split"></i></div>
+                        <div>
+                            <div class="fs-4 fw-bold" id="res-pending">—</div>
+                            <div class="text-muted" style="font-size:.78rem">Pending</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-xl-2">
+                    <div class="stat-box red">
+                        <div class="stat-ic" style="background:#fee2e2;color:#991b1b"><i class="bi bi-x-circle"></i></div>
+                        <div>
+                            <div class="fs-4 fw-bold" id="res-cancelled">—</div>
+                            <div class="text-muted" style="font-size:.78rem">Cancelled</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── BREAKDOWNS ROW ── -->
+            <div class="row g-3 mb-4">
+
+                <!-- Reservation Status Breakdown -->
+                <div class="col-lg-4">
+                    <div class="card-box h-100">
+                        <div class="card-box-header">
+                            <h6><i class="bi bi-pie-chart me-2"></i>Reservation Breakdown</h6>
+                        </div>
+                        <div id="resBreakdown">
+                            <div class="text-center py-3 text-muted" style="font-size:.85rem">No data</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Room Type Occupancy -->
+                <div class="col-lg-4">
+                    <div class="card-box h-100">
+                        <div class="card-box-header">
+                            <h6><i class="bi bi-door-open me-2"></i>Room Occupancy by Type</h6>
+                        </div>
+                        <div class="row g-2 mb-3" id="roomOccSummary">
+                        </div>
+                        <div id="roomTypeBreakdown">
+                            <div class="text-center py-3 text-muted" style="font-size:.85rem">Loading…</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Revenue Key Metrics -->
+                <div class="col-lg-4">
+                    <div class="card-box h-100">
+                        <div class="card-box-header">
+                            <h6><i class="bi bi-graph-up me-2"></i>Revenue Metrics</h6>
+                        </div>
+                        <div class="row g-2" id="revMetrics">
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ── RECENT TRANSACTIONS ── -->
+            <div class="card-box mb-4">
+                <div class="card-box-header">
+                    <h6><i class="bi bi-receipt me-2"></i>Recent Paid Transactions</h6>
+                    <a href="billing.html" class="btn btn-hotel btn-sm no-print">View All Bills</a>
+                </div>
+                <div id="recentTxWrap">
+                    <div class="text-center py-4 text-muted" style="font-size:.85rem">Loading…</div>
+                </div>
+            </div>
+
+            <!-- ── RECENT RESERVATIONS ── -->
+            <div class="card-box">
+                <div class="card-box-header">
+                    <h6><i class="bi bi-calendar-check me-2"></i>Recent Reservations</h6>
+                    <a href="reservations.html" class="btn btn-hotel btn-sm no-print">View All</a>
+                </div>
+                <div id="recentResWrap">
+                    <div class="text-center py-4 text-muted" style="font-size:.85rem">Loading…</div>
+                </div>
+            </div>
+
+        </div>
+        <!-- end #reportContent -->
+
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/app.js"></script>
+<script>
+    'use strict';
+
+    // ── Global data ───────────────────────────────────────────────
+    var allBills        = [];
+    var allReservations = [];
+    var allRooms        = [];
+    var filterFrom      = null;
+    var filterTo        = null;
+
+    document.addEventListener('DOMContentLoaded', function(){
+        initPage('reports.html');
+        // Default: last 30 days
+        setQuickRange(30, false);
+        loadReports();
+    });
+
+    // ══════════════════════════════════════════════
+    //  DATE FILTER HELPERS
+    // ══════════════════════════════════════════════
+    function setQuickRange(days, reload){
+        var to   = new Date();
+        var from = new Date();
+        from.setDate(from.getDate() - days);
+        document.getElementById('fromDate').value = from.toISOString().slice(0,10);
+        document.getElementById('toDate').value   = to.toISOString().slice(0,10);
+        filterFrom = from;
+        filterTo   = to;
+        if (reload !== false) applyFilter();
+    }
+
+    function applyFilter(){
+        var f = document.getElementById('fromDate').value;
+        var t = document.getElementById('toDate').value;
+        filterFrom = f ? new Date(f) : null;
+        filterTo   = t ? new Date(t + 'T23:59:59') : null;
+        updateFilterLabel();
+        renderAll();
+    }
+
+    function resetFilter(){
+        document.getElementById('fromDate').value = '';
+        document.getElementById('toDate').value   = '';
+        filterFrom = null;
+        filterTo   = null;
+        updateFilterLabel();
+        renderAll();
+    }
+
+    function updateFilterLabel(){
+        var lbl = document.getElementById('filterLabel');
+        if (!filterFrom && !filterTo){ lbl.textContent = 'Showing all-time data'; return; }
+        var parts = [];
+        if (filterFrom) parts.push('From: ' + filterFrom.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}));
+        if (filterTo)   parts.push('To: '   + filterTo.toLocaleDateString('en-US',  {month:'short',day:'numeric',year:'numeric'}));
+        lbl.textContent = parts.join('  ·  ');
+    }
+
+    function inRange(dateStr){
+        if (!dateStr) return true;
+        var d = new Date(dateStr);
+        if (filterFrom && d < filterFrom) return false;
+        if (filterTo   && d > filterTo)   return false;
+        return true;
+    }
+
+    // ══════════════════════════════════════════════
+    //  LOAD DATA
+    // ══════════════════════════════════════════════
+    async function loadReports(){
+        document.getElementById('loadingWrap').classList.remove('d-none');
+        document.getElementById('reportContent').classList.add('d-none');
+
+        try {
+            var results = await Promise.allSettled([
+                API.get('api/bills'),
+                API.get('api/reservations'),
+                API.get('api/rooms')
+            ]);
+
+            allBills        = (results[0].status==='fulfilled' && Array.isArray(results[0].value)) ? results[0].value : [];
+            allReservations = (results[1].status==='fulfilled' && Array.isArray(results[1].value)) ? results[1].value : [];
+            allRooms        = (results[2].status==='fulfilled' && Array.isArray(results[2].value)) ? results[2].value : [];
+
+            updateFilterLabel();
+            renderAll();
+
+            document.getElementById('loadingWrap').classList.add('d-none');
+            document.getElementById('reportContent').classList.remove('d-none');
+
+        } catch(err){
+            document.getElementById('loadingWrap').innerHTML =
+                '<div class="text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Failed to load report data: ' + err.message + '</div>';
+        }
+    }
+
+    // ══════════════════════════════════════════════
+    //  RENDER ALL (applies date filter)
+    // ══════════════════════════════════════════════
+    function renderAll(){
+        // Filter by date range
+        var bills = allBills.filter(function(b){
+            return inRange(b.createdAt || b.billDate || b.issueDate);
+        });
+        var reservations = allReservations.filter(function(r){
+            return inRange(r.checkinDate || r.checkInDate || r.createdAt);
+        });
+
+        renderRevenue(bills);
+        renderReservationStats(reservations);
+        renderResBreakdown(reservations);
+        renderRoomOccupancy(allRooms);
+        renderRevMetrics(bills, reservations);
+        renderRecentTransactions(bills);
+        renderRecentReservations(reservations);
+    }
+
+    // ══════════════════════════════════════════════
+    //  REVENUE STATS
+    // ══════════════════════════════════════════════
+    function renderRevenue(bills){
+        var paid   = bills.filter(function(b){ return b.paymentStatus==='PAID'; });
+        var unpaid = bills.filter(function(b){ return b.paymentStatus!=='PAID'; });
+        var total  = paid.reduce(function(s,b){ return s + (parseFloat(b.totalAmount)||0); }, 0);
+        var avg    = paid.length ? total / paid.length : 0;
+
+        document.getElementById('rev-total').textContent  = fmtMoney(total);
+        document.getElementById('rev-paid').textContent   = paid.length;
+        document.getElementById('rev-unpaid').textContent = unpaid.length;
+        document.getElementById('rev-avg').textContent    = fmtMoney(avg);
+    }
+
+    // ══════════════════════════════════════════════
+    //  RESERVATION STATS
+    // ══════════════════════════════════════════════
+    function renderReservationStats(res){
+        document.getElementById('res-total').textContent      = res.length;
+        document.getElementById('res-confirmed').textContent  = res.filter(function(r){ return r.status==='CONFIRMED'; }).length;
+        document.getElementById('res-checkedin').textContent  = res.filter(function(r){ return r.status==='CHECKED_IN'; }).length;
+        document.getElementById('res-checkedout').textContent = res.filter(function(r){ return r.status==='CHECKED_OUT'; }).length;
+        document.getElementById('res-pending').textContent    = res.filter(function(r){ return r.status==='PENDING'; }).length;
+        document.getElementById('res-cancelled').textContent  = res.filter(function(r){ return r.status==='CANCELLED'; }).length;
+    }
+
+    // ══════════════════════════════════════════════
+    //  RESERVATION BREAKDOWN (progress bars)
+    // ══════════════════════════════════════════════
+    function renderResBreakdown(res){
+        var total = res.length || 1;
+        var statuses = [
+            { key:'CONFIRMED',   label:'Confirmed',   color:'#1e40af', bg:'#dbeafe' },
+            { key:'CHECKED_IN',  label:'Checked In',  color:'#065f46', bg:'#d1fae5' },
+            { key:'CHECKED_OUT', label:'Checked Out', color:'#374151', bg:'#f3f4f6' },
+            { key:'PENDING',     label:'Pending',     color:'#92400e', bg:'#fef3c7' },
+            { key:'CANCELLED',   label:'Cancelled',   color:'#991b1b', bg:'#fee2e2' }
+        ];
+        var html = statuses.map(function(s){
+            var count = res.filter(function(r){ return r.status===s.key; }).length;
+            var pct   = Math.round(count/total*100);
+            return '<div class="stat-bar-row">' +
+                '<div class="stat-bar-label">' +
+                '<span class="lbl">' +
+                '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + s.color + ';margin-right:.4rem"></span>' +
+                s.label + '</span>' +
+                '<span class="val">' + count + ' <span style="opacity:.6">(' + pct + '%)</span></span>' +
+                '</div>' +
+                '<div class="progress">' +
+                '<div class="progress-bar" style="width:' + pct + '%;background:' + s.color + ';border-radius:4px"></div>' +
+                '</div>' +
+                '</div>';
+        }).join('');
+        document.getElementById('resBreakdown').innerHTML = html || '<div class="text-center py-3 text-muted" style="font-size:.85rem">No reservations in range</div>';
+    }
+
+    // ══════════════════════════════════════════════
+    //  ROOM OCCUPANCY BY TYPE
+    // ══════════════════════════════════════════════
+    function renderRoomOccupancy(rooms){
+        var avail = rooms.filter(function(r){ return r.roomStatus==='AVAILABLE'; }).length;
+        var occ   = rooms.filter(function(r){ return r.roomStatus==='OCCUPIED'; }).length;
+        var maint = rooms.filter(function(r){ return r.roomStatus==='MAINTENANCE'; }).length;
+        var total = rooms.length || 1;
+        var occRate = Math.round(occ/total*100);
+
+        document.getElementById('roomOccSummary').innerHTML =
+            metricMini(occ + '/' + total, 'Occupied', '#e65100') +
+            metricMini(avail, 'Available', '#2e7d32') +
+            metricMini(maint, 'Maint.', '#dc3545') +
+            metricMini(occRate + '%', 'Occ. Rate', '#1a3c5e');
+
+        var types = [
+            { name:'Single', color:'#1565c0' },
+            { name:'Double', color:'#2e7d32' },
+            { name:'Deluxe', color:'#e65100' },
+            { name:'Suite',  color:'#6a1b9a' }
+        ];
+
+        var html = types.map(function(t){
+            var typeRooms = rooms.filter(function(r){ return (r.typeName||r.roomType||'')===t.name; });
+            if (!typeRooms.length) return '';
+            var occCount = typeRooms.filter(function(r){ return r.roomStatus==='OCCUPIED'; }).length;
+            var pct      = Math.round(occCount/typeRooms.length*100);
+            return '<div class="stat-bar-row">' +
+                '<div class="stat-bar-label">' +
+                '<span class="lbl" style="color:' + t.color + '">' + t.name + '</span>' +
+                '<span class="val">' + occCount + '/' + typeRooms.length + ' occupied <span style="opacity:.6">(' + pct + '%)</span></span>' +
+                '</div>' +
+                '<div class="progress">' +
+                '<div class="progress-bar" style="width:' + pct + '%;background:' + t.color + ';border-radius:4px"></div>' +
+                '</div>' +
+                '</div>';
+        }).join('');
+
+        document.getElementById('roomTypeBreakdown').innerHTML = html ||
+            '<div class="text-center py-3 text-muted" style="font-size:.85rem">No room data</div>';
+    }
+
+    function metricMini(val, lbl, color){
+        return '<div class="col-3">' +
+            '<div style="background:#f8fafc;border:1px solid #e8edf5;border-radius:8px;padding:.5rem;text-align:center">' +
+            '<div style="font-weight:700;color:' + color + ';font-size:.95rem">' + val + '</div>' +
+            '<div style="font-size:.65rem;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af">' + lbl + '</div>' +
+            '</div>' +
+            '</div>';
+    }
+
+    // ══════════════════════════════════════════════
+    //  REVENUE METRICS (right column)
+    // ══════════════════════════════════════════════
+    function renderRevMetrics(bills, reservations){
+        var paid        = bills.filter(function(b){ return b.paymentStatus==='PAID'; });
+        var revenue     = paid.reduce(function(s,b){ return s+(parseFloat(b.totalAmount)||0); },0);
+        var discTotal   = bills.reduce(function(s,b){ return s+(parseFloat(b.discountAmount)||0); },0);
+        var unpaidAmt   = bills.filter(function(b){ return b.paymentStatus!=='PAID'; })
+            .reduce(function(s,b){ return s+(parseFloat(b.totalAmount)||0); },0);
+        var payRate     = bills.length ? Math.round(paid.length/bills.length*100) : 0;
+        var avgStay     = 0;
+        if (reservations.length){
+            var stays = reservations.map(function(r){
+                var ci  = r.checkinDate  || r.checkInDate;
+                var co  = r.checkoutDate || r.checkOutDate;
+                if (!ci||!co) return 0;
+                return Math.max(0,Math.floor((new Date(co)-new Date(ci))/86400000));
+            }).filter(function(n){ return n>0; });
+            if (stays.length) avgStay = (stays.reduce(function(a,b){return a+b;},0)/stays.length).toFixed(1);
+        }
+
+        document.getElementById('revMetrics').innerHTML =
+            metricBlock(fmtMoney(revenue),       'Collected Revenue',     '#d1fae5') +
+            metricBlock(fmtMoney(unpaidAmt),     'Outstanding Amount',    '#fee2e2') +
+            metricBlock(fmtMoney(discTotal),     'Total Discounts Given', '#fef3c7') +
+            metricBlock(payRate + '%',           'Payment Rate',          '#e3f2fd') +
+            metricBlock(avgStay + ' nights',     'Avg. Stay Duration',    '#f3e5f5') +
+            metricBlock(reservations.length + '', 'Reservations in Range', '#f0f4f8');
+    }
+
+    function metricBlock(val, lbl, bg){
+        return '<div class="col-6">' +
+            '<div class="metric-box" style="background:' + bg + '">' +
+            '<div class="metric-val" style="font-size:1.25rem">' + val + '</div>' +
+            '<div class="metric-lbl">' + lbl + '</div>' +
+            '</div>' +
+            '</div>';
+    }
+
+    // ══════════════════════════════════════════════
+    //  RECENT TRANSACTIONS TABLE
+    // ══════════════════════════════════════════════
+    function renderRecentTransactions(bills){
+        var paid = bills.filter(function(b){ return b.paymentStatus==='PAID'; })
+            .sort(function(a,b){ return (b.billId||0)-(a.billId||0); })
+            .slice(0, 10);
+
+        if (!paid.length){
+            document.getElementById('recentTxWrap').innerHTML =
+                '<div class="text-center py-4 text-muted">' +
+                '<i class="bi bi-receipt-cutoff" style="font-size:2.5rem;opacity:.2;display:block;margin-bottom:.5rem"></i>' +
+                'No paid transactions in the selected range</div>';
+            return;
+        }
+
+        var rows = paid.map(function(b){
+            var disc  = parseFloat(b.discountAmount||0);
+            return '<tr class="fade-in">' +
+                '<td><span class="fw-bold" style="color:var(--primary)">' + (b.billNumber||'—') + '</span></td>' +
+                '<td><code style="font-size:.78rem">' + (b.reservationNumber||'—') + '</code></td>' +
+                '<td>' + (b.guestName||'—') + '</td>' +
+                '<td class="fw-bold" style="color:#065f46">' + fmtMoney(b.totalAmount) + '</td>' +
+                '<td>' + (disc>0 ? '<span style="color:#15803d;font-size:.78rem;font-weight:600">− '+fmtMoney(disc)+'</span>' : '<span class="text-muted" style="font-size:.78rem">—</span>') + '</td>' +
+                '<td>' + payMethodBadge(b.paymentMethod) + '</td>' +
+                '</tr>';
+        }).join('');
+
+        document.getElementById('recentTxWrap').innerHTML =
+            '<div class="table-responsive">' +
+            '<table class="table table-hover mb-0"><thead><tr>' +
+            '<th>Bill No</th><th>Reservation</th><th>Guest</th>' +
+            '<th>Amount Paid</th><th>Discount</th><th>Method</th>' +
+            '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+    }
+
+    // ══════════════════════════════════════════════
+    //  RECENT RESERVATIONS TABLE
+    // ══════════════════════════════════════════════
+    function renderRecentReservations(res){
+        var recent = res.slice().sort(function(a,b){ return (b.reservationId||0)-(a.reservationId||0); }).slice(0,10);
+
+        if (!recent.length){
+            document.getElementById('recentResWrap').innerHTML =
+                '<div class="text-center py-4 text-muted">' +
+                '<i class="bi bi-calendar-x" style="font-size:2.5rem;opacity:.2;display:block;margin-bottom:.5rem"></i>' +
+                'No reservations in the selected range</div>';
+            return;
+        }
+
+        var rows = recent.map(function(r){
+            return '<tr class="fade-in">' +
+                '<td><code style="font-size:.78rem;color:var(--primary-lt)">' + (r.reservationNumber||'—') + '</code></td>' +
+                '<td>' + (r.guestName||'—') + '</td>' +
+                '<td><span class="badge bg-light text-dark border">' + (r.roomNumber||'—') + '</span></td>' +
+                '<td>' + fmtDate(r.checkinDate||r.checkInDate) + '</td>' +
+                '<td>' + fmtDate(r.checkoutDate||r.checkOutDate) + '</td>' +
+                '<td>' + statusBadge(r.status) + '</td>' +
+                '</tr>';
+        }).join('');
+
+        document.getElementById('recentResWrap').innerHTML =
+            '<div class="table-responsive">' +
+            '<table class="table table-hover mb-0"><thead><tr>' +
+            '<th>Res. No</th><th>Guest</th><th>Room</th>' +
+            '<th>Check-in</th><th>Check-out</th><th>Status</th>' +
+            '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+    }
+
+    // ── Payment Method Badge ──────────────────────────────────────
+    function payMethodBadge(method){
+        var map = {
+            'CASH'         : ['#d1fae5','#065f46','bi-cash-stack'],
+            'CARD'         : ['#dbeafe','#1e40af','bi-credit-card'],
+            'BANK_TRANSFER': ['#ede9fe','#4c1d95','bi-bank'],
+            'ONLINE'       : ['#fef3c7','#92400e','bi-phone']
+        };
+        var m = map[method] || ['#f3f4f6','#374151','bi-question-circle'];
+        return '<span style="display:inline-flex;align-items:center;gap:.3rem;padding:.2rem .65rem;border-radius:20px;background:' + m[0] + ';color:' + m[1] + ';font-size:.73rem;font-weight:700">' +
+            '<i class="bi ' + m[2] + '"></i>' + (method||'—') + '</span>';
+    }
+</script>
+</body>
+</html>
