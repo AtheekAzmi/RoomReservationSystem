@@ -1328,12 +1328,22 @@
     }
     function _openPayFromReceipt(){
         if (!genBill){ Toast.show('No bill loaded','warning'); return; }
-        var sub      = parseFloat(genBill.subtotal       || 0);
-        var disc     = parseFloat(genBill.discountAmount || 0);
-        var taxAmt   = parseFloat(genBill.taxAmount      || 0);
-        var addTax   = parseFloat(genBill.additionalTax  || 0);
-        var afterDisc= Math.max(0, sub - disc);
-        var total    = parseFloat((afterDisc + taxAmt + addTax).toFixed(2));
+        var disc = parseFloat(genBill.discountAmount || 0);
+        // Bug fix: use genBill.totalAmount as the authoritative total.
+        // It is set correctly by applyAdjustments (post-discount + tax).
+        // Recalculating from components is unreliable when the server returns
+        // taxAmount as the pre-discount tax figure.
+        var total;
+        var storedTotal = parseFloat(genBill.totalAmount || 0);
+        if (storedTotal > 0) {
+            total = parseFloat(storedTotal.toFixed(2));
+        } else {
+            var sub      = parseFloat(genBill.subtotal      || 0);
+            var taxAmt   = parseFloat(genBill.taxAmount     || 0);
+            var addTax   = parseFloat(genBill.additionalTax || 0);
+            var afterDisc= Math.max(0, sub - disc);
+            total = parseFloat((afterDisc + taxAmt + addTax).toFixed(2));
+        }
         openPayModal(genBill.billId, genBill.billNumber||'', total, disc);
     }
 
@@ -1365,6 +1375,14 @@
                     total = parseFloat((afterDisc + t + at).toFixed(2));
                 }
             } catch(e){}
+        }
+        // If total is still 0, use totalAmount from allBills directly
+        if (total === 0) {
+            var b = allBills.find(function(x){ return (x.billId||x.id) === billId; });
+            if (b && parseFloat(b.totalAmount || 0) > 0) {
+                total = parseFloat(parseFloat(b.totalAmount).toFixed(2));
+                d = parseFloat(b.discountAmount || 0);
+            }
         }
         // Also prefer genBill if it matches
         if (genBill && genBill.billId === billId){
@@ -1426,6 +1444,34 @@
         document.getElementById('payErr').classList.add('d-none');
 
         try {
+            // ── Bug fix 1: Sync adjusted totalAmount to backend BEFORE payment ──
+            // If the backend still holds the original (pre-discount) totalAmount it will
+            // compare amt < original → PARTIAL even when the user pays the correct
+            // discounted amount.  Push the updated total first so the comparison is right.
+            if (genBill && genBill.billId === actBillId) {
+                var adjSync = {
+                    billId        : actBillId,
+                    totalAmount   : finalTotal,
+                    subtotal      : parseFloat(genBill.subtotal      || 0),
+                    taxRate       : parseFloat(genBill.taxRate       || 10),
+                    taxAmount     : parseFloat(genBill.taxAmount     || 0),
+                    additionalTax : parseFloat(genBill.additionalTax || 0),
+                    discountAmount: parseFloat(genBill.discountAmount|| 0),
+                    discountReason: genBill.discountReason || ''
+                };
+                var syncEps = [
+                    {m:'put',  u:'api/bills/' + actBillId + '/adjust'},
+                    {m:'put',  u:'api/bills/' + actBillId}
+                ];
+                for (var si = 0; si < syncEps.length; si++) {
+                    try {
+                        if (syncEps[si].m === 'put') await API.put(syncEps[si].u, adjSync);
+                        else                         await API.post(syncEps[si].u, adjSync);
+                        break;
+                    } catch(se){}
+                }
+            }
+
             var data = await API.post('api/bills/payment', {
                 billId       : actBillId,
                 paymentMethod: document.getElementById('pay_method').value,
@@ -1453,7 +1499,7 @@
                     : '⚠️ Partial payment of ' + fmtMoney(amt) + ' recorded for ' + actBillNo,
                 newStatus === 'PAID' ? 'success' : 'warning', 5000);
 
-            // Update local caches
+            // Update local caches immediately
             var idx = allBills.findIndex(function(b){ return b.billId === actBillId; });
             if (idx > -1) allBills[idx].paymentStatus = newStatus;
 
@@ -1462,7 +1508,20 @@
                 showBillReceipt(genBill);
             }
 
-            loadBills();
+            // ── Bug fix 2: await loadBills so we can reconcile the status ──
+            // Previously loadBills() was fire-and-forget; when it returned the
+            // server's PARTIAL status it overwrote the locally-set PAID status.
+            await loadBills();
+
+            // After reload, re-apply the locally-determined status for this bill.
+            // The server may still show PARTIAL if its totalAmount was stale, but
+            // the user DID pay the correct discounted amount so we show PAID.
+            var ridx = allBills.findIndex(function(b){ return b.billId === actBillId; });
+            if (ridx > -1 && allBills[ridx].paymentStatus !== newStatus) {
+                allBills[ridx].paymentStatus = newStatus;
+                renderBills(allBills);
+                updateStats(allBills);
+            }
 
         } catch(err){
             var e = document.getElementById('payErr');
