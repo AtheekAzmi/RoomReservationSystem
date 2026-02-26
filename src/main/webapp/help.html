@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Help & Guide — Hotel System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        :root { --primary:#1a3c5e; --primary-lt:#2e6da4; --accent:#e8a020; --sidebar:250px; }
+        * { box-sizing:border-box; }
+        body { background:#f0f4f8; font-family:'Segoe UI',sans-serif; margin:0; padding:0; }
+
+        /* Sidebar */
+        .sidebar {
+            position:fixed; top:0; left:0;
+            width:var(--sidebar); height:100vh;
+            background:var(--primary); z-index:1000;
+            overflow-y:auto; display:flex; flex-direction:column;
+        }
+        .sidebar .nav-link {
+            color:rgba(255,255,255,.75); padding:.65rem 1rem;
+            display:flex; align-items:center; gap:.75rem;
+            font-size:.9rem; border-left:3px solid transparent;
+            transition:all .2s; text-decoration:none;
+        }
+        .sidebar .nav-link:hover, .sidebar .nav-link.active {
+            background:rgba(255,255,255,.12);
+            color:#fff; border-left-color:var(--accent);
+        }
+
+        /* Layout */
+        .main-content { margin-left:var(--sidebar); min-height:100vh; display:flex; flex-direction:column; }
+        .topbar {
+            background:#fff; padding:.875rem 1.5rem;
+            border-bottom:1px solid #e0e0e0;
+            display:flex; align-items:center; justify-content:space-between;
+            position:sticky; top:0; z-index:999; flex-shrink:0;
+        }
+        .content-area { padding:1.5rem; flex:1; }
+
+        /* Hero */
+        .help-hero {
+            background:linear-gradient(135deg, var(--primary) 0%, var(--primary-lt) 100%);
+            border-radius:16px; padding:2rem 2.5rem; color:#fff;
+            margin-bottom:1.5rem; position:relative; overflow:hidden;
+        }
+        .help-hero::after {
+            content:''; position:absolute; right:-40px; top:-40px;
+            width:220px; height:220px; border-radius:50%;
+            background:rgba(255,255,255,.06);
+        }
+
+        /* Role cards */
+        .role-card {
+            border-radius:12px; padding:1.25rem; height:100%;
+            border:2px solid #e0e0e0; background:#fff;
+            box-shadow:0 2px 8px rgba(0,0,0,.05);
+        }
+        .role-card.admin   { border-color:#dc3545; }
+        .role-card.recep   { border-color:#2e6da4; }
+        .role-icon {
+            width:48px; height:48px; border-radius:12px;
+            display:flex; align-items:center; justify-content:center;
+            font-size:1.4rem; margin-bottom:1rem;
+        }
+
+        /* Section headings */
+        .section-title {
+            font-size:1.1rem; font-weight:700; color:var(--primary);
+            display:flex; align-items:center; gap:.6rem;
+            margin-bottom:1rem;
+        }
+        .section-title .title-icon {
+            width:34px; height:34px; border-radius:8px;
+            display:flex; align-items:center; justify-content:center;
+            font-size:1rem; flex-shrink:0;
+        }
+
+        /* Accordion */
+        .accordion-button {
+            font-weight:600; color:var(--primary);
+            background:#f8fafc;
+        }
+        .accordion-button:not(.collapsed) {
+            color:#fff;
+            background:linear-gradient(135deg,var(--primary),var(--primary-lt));
+            box-shadow:none;
+        }
+        .accordion-button:not(.collapsed)::after { filter:invert(1); }
+        .accordion-button:focus { box-shadow:0 0 0 .2rem rgba(26,60,94,.2); }
+        .accordion-item { border:1px solid #e0e0e0; margin-bottom:.6rem; border-radius:10px !important; overflow:hidden; }
+        .accordion-body { font-size:.9rem; line-height:1.7; }
+
+        /* Steps */
+        .step-list { list-style:none; padding:0; margin:0; }
+        .step-list li {
+            display:flex; gap:.9rem; padding:.6rem 0;
+            border-bottom:1px dashed #eee;
+        }
+        .step-list li:last-child { border-bottom:none; }
+        .step-num {
+            width:26px; height:26px; border-radius:50%;
+            background:var(--primary); color:#fff;
+            font-size:.72rem; font-weight:700;
+            display:flex; align-items:center; justify-content:center;
+            flex-shrink:0; margin-top:.15rem;
+        }
+
+        /* Tips */
+        .tip-box {
+            background:#fff8e1; border-left:4px solid var(--accent);
+            border-radius:0 8px 8px 0; padding:.75rem 1rem;
+            font-size:.85rem; margin-top:.75rem;
+        }
+        .note-box {
+            background:#e3f2fd; border-left:4px solid #1565c0;
+            border-radius:0 8px 8px 0; padding:.75rem 1rem;
+            font-size:.85rem; margin-top:.75rem;
+        }
+        .warn-box {
+            background:#fff3e0; border-left:4px solid #e65100;
+            border-radius:0 8px 8px 0; padding:.75rem 1rem;
+            font-size:.85rem; margin-top:.75rem;
+        }
+
+        /* Quick ref table */
+        .qref-table th {
+            background:#f8fafc; font-size:.78rem;
+            text-transform:uppercase; letter-spacing:.4px; color:#555;
+        }
+        .qref-table td { font-size:.875rem; vertical-align:middle; }
+
+        /* Admin badge */
+        .badge-admin {
+            background:#fee2e2; color:#991b1b;
+            font-size:.68rem; font-weight:700;
+            padding:.15rem .45rem; border-radius:4px;
+            letter-spacing:.3px; vertical-align:middle;
+        }
+
+        .card-box { background:#fff; border-radius:12px; padding:1.5rem; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+
+        @media(max-width:768px){
+            .sidebar { transform:translateX(-100%); }
+            .main-content { margin-left:0; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="sidebar" id="sidebar"></div>
+
+<div class="main-content">
+
+    <!-- Topbar -->
+    <div class="topbar">
+        <div class="d-flex align-items-center gap-3">
+            <a href="dashboard.html" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Dashboard
+            </a>
+            <h5 class="mb-0" style="color:var(--primary);font-weight:600">
+                <i class="bi bi-question-circle me-2"></i>Help & Guide
+            </h5>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span class="text-muted" style="font-size:.85rem">
+                <i class="bi bi-person-circle me-1"></i>
+                <span id="topbarUser"></span>
+            </span>
+            <span class="badge bg-secondary" id="topbarRole"></span>
+        </div>
+    </div>
+
+    <!-- Content -->
+    <div class="content-area">
+
+        <!-- Hero -->
+        <div class="help-hero mb-4">
+            <div style="position:relative;z-index:1">
+                <div class="d-flex align-items-center gap-3 mb-2">
+                    <div style="width:52px;height:52px;background:rgba(255,255,255,.2);
+                         border-radius:14px;display:flex;align-items:center;
+                         justify-content:center;font-size:1.6rem">
+                        <i class="bi bi-book-half"></i>
+                    </div>
+                    <div>
+                        <h4 class="mb-0 fw-bold">Hotel System Guide</h4>
+                        <div style="opacity:.75;font-size:.875rem">Everything you need to get started quickly</div>
+                    </div>
+                </div>
+                <p class="mb-0" style="opacity:.8;font-size:.875rem;max-width:600px">
+                    This guide covers all features available in the Hotel Reservation System.
+                    Sections marked <span class="badge-admin" style="background:rgba(220,53,69,.3);color:#ffcdd2">ADMIN</span>
+                    are only accessible to administrators.
+                </p>
+            </div>
+        </div>
+
+        <!-- Role Overview -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <div class="role-card recep">
+                    <div class="role-icon" style="background:#e3f2fd;color:#1565c0">
+                        <i class="bi bi-person-badge"></i>
+                    </div>
+                    <h6 class="fw-bold mb-2" style="color:#1a3c5e">Receptionist</h6>
+                    <ul class="mb-0 ps-3" style="font-size:.875rem;line-height:1.9">
+                        <li>View and manage guest profiles</li>
+                        <li>Create, confirm & cancel reservations</li>
+                        <li>Check guests in and out</li>
+                        <li>Check room availability</li>
+                        <li>Mark rooms as Available after checkout</li>
+                        <li>View bills (read-only)</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="role-card admin">
+                    <div class="role-icon" style="background:#fee2e2;color:#991b1b">
+                        <i class="bi bi-shield-check"></i>
+                    </div>
+                    <h6 class="fw-bold mb-2" style="color:#991b1b">Administrator</h6>
+                    <ul class="mb-0 ps-3" style="font-size:.875rem;line-height:1.9">
+                        <li>Everything a receptionist can do</li>
+                        <li>Process payments &amp; apply discounts</li>
+                        <li>Add charges / adjustments to bills</li>
+                        <li>Add, edit and delete rooms</li>
+                        <li>Manage staff accounts</li>
+                        <li>View occupancy, revenue &amp; activity reports</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Accordion Sections -->
+        <div class="accordion" id="helpAccordion">
+
+            <!-- 1. Getting Started -->
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#sec1">
+                        <i class="bi bi-door-open me-2"></i>Getting Started — Login &amp; Navigation
+                    </button>
+                </h2>
+                <div id="sec1" class="accordion-collapse collapse show" data-bs-parent="#helpAccordion">
+                    <div class="accordion-body">
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <h6 class="fw-semibold mb-3" style="color:var(--primary)">How to Log In</h6>
+                                <ol class="step-list">
+                                    <li><span class="step-num">1</span><span>Open the system in your browser. You will see the <strong>Login</strong> page.</span></li>
+                                    <li><span class="step-num">2</span><span>Enter your <strong>Username</strong> (provided by your admin) and <strong>Password</strong>.</span></li>
+                                    <li><span class="step-num">3</span><span>Click <strong>Sign In</strong>. You will be taken to the Dashboard.</span></li>
+                                    <li><span class="step-num">4</span><span>Your role (Admin / Receptionist) is shown in the top-right corner.</span></li>
+                                </ol>
+                                <div class="tip-box">
+                                    <i class="bi bi-lightbulb me-1"></i>
+                                    <strong>Tip:</strong> If you see "Invalid credentials", check caps lock or ask your admin to reset your password.
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="fw-semibold mb-3" style="color:var(--primary)">Navigating the System</h6>
+                                <p style="font-size:.875rem">Use the <strong>left sidebar</strong> to navigate between pages:</p>
+                                <ul style="font-size:.875rem;line-height:2">
+                                    <li><i class="bi bi-speedometer2 me-1 text-primary"></i> <strong>Dashboard</strong> — hotel overview &amp; stats</li>
+                                    <li><i class="bi bi-calendar-check me-1 text-primary"></i> <strong>Reservations</strong> — book, check-in, check-out</li>
+                                    <li><i class="bi bi-people me-1 text-primary"></i> <strong>Guests</strong> — guest profiles</li>
+                                    <li><i class="bi bi-door-open me-1 text-primary"></i> <strong>Rooms</strong> — availability &amp; status</li>
+                                    <li><i class="bi bi-receipt me-1 text-primary"></i> <strong>Billing</strong> — bills &amp; payments</li>
+                                    <li><i class="bi bi-bar-chart-line me-1 text-primary"></i> <strong>Reports</strong> <span class="badge-admin">ADMIN</span> — analytics</li>
+                                    <li><i class="bi bi-person-badge me-1 text-primary"></i> <strong>Staff</strong> <span class="badge-admin">ADMIN</span> — staff accounts</li>
+                                </ul>
+                                <div class="note-box">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    To log out, scroll to the bottom of the sidebar and click <strong>Logout</strong>.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Reservations -->
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#sec2">
+                        <i class="bi bi-calendar-check me-2"></i>Reservations — Book, Check-In, Check-Out
+                    </button>
+                </h2>
+                <div id="sec2" class="accordion-collapse collapse" data-bs-parent="#helpAccordion">
+                    <div class="accordion-body">
+                        <div class="row g-4">
+                            <div class="col-md-4">
+                                <h6 class="fw-semibold mb-3" style="color:var(--primary)">
+                                    <i class="bi bi-plus-circle me-1"></i> Create a Reservation
+                                </h6>
+                                <ol class="step-list">
+                                    <li><span class="step-num">1</span><span>Go to <strong>Reservations</strong> page.</span></li>
+                                    <li><span class="step-num">2</span><span>Click <strong>New Reservation</strong>.</span></li>
+                                    <li><span class="step-num">3</span><span>Select the <strong>Guest</strong> (type to search, or add a new guest first).</span></li>
+                                    <li><span class="step-num">4</span><span>Choose <strong>Room Type</strong>, then pick an available room from the list.</span></li>
+                                    <li><span class="step-num">5</span><span>Set <strong>Check-in</strong> and <strong>Check-out</strong> dates.</span></li>
+                                    <li><span class="step-num">6</span><span>Click <strong>Confirm Reservation</strong>.</span></li>
+                                </ol>
+                            </div>
+                            <div class="col-md-4">
+                                <h6 class="fw-semibold mb-3" style="color:#2e7d32">
+                                    <i class="bi bi-box-arrow-in-right me-1"></i> Check In a Guest
+                                </h6>
+                                <ol class="step-list">
+                                    <li><span class="step-num">1</span><span>Find the reservation (search by name or reservation number).</span></li>
+                                    <li><span class="step-num">2</span><span>Reservation must be in <strong>CONFIRMED</strong> status.</span></li>
+                                    <li><span class="step-num">3</span><span>Click the reservation row to open details.</span></li>
+                                    <li><span class="step-num">4</span><span>Click <strong>Check In</strong>. Status changes to <em>CHECKED_IN</em>.</span></li>
+                                </ol>
+                                <div class="tip-box">
+                                    <i class="bi bi-lightbulb me-1"></i>
+                                    After check-in, the room status automatically becomes <strong>OCCUPIED</strong>.
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <h6 class="fw-semibold mb-3" style="color:#e65100">
+                                    <i class="bi bi-box-arrow-right me-1"></i> Check Out a Guest
+                                </h6>
+                                <ol class="step-list">
+                                    <li><span class="step-num">1</span><span>Go to <strong>Billing</strong> and find the guest's bill.</span></li>
+                                    <li><span class="step-num">2</span><span>Review the total amount (nightly rate × nights).</span></li>
+                                    <li><span class="step-num">3</span><span>An admin must <strong>process the payment</strong>.</span></li>
+                                    <li><span class="step-num">4</span><span>Once paid, go to <strong>Reservations</strong> and click <strong>Check Out</strong>.</span></li>
+                                    <li><span class="step-num">5</span><span>The room is automatically marked <strong>AVAILABLE</strong>.</span></li>
+                                </ol>
+                            </div>
+                        </div>
+
+                        <hr class="my-3">
+                        <h6 class="fw-semibold mb-2" style="color:var(--primary)">Reservation Statuses</h6>
+                        <div class="row g-2">
+                            <div class="col-sm-6 col-lg-3">
+                                <div class="p-2 rounded" style="background:#dbeafe;font-size:.82rem">
+                                    <strong style="color:#1e40af">CONFIRMED</strong><br>
+                                    Reservation created, guest hasn't arrived yet.
+                                </div>
+                            </div>
+                            <div class="col-sm-6 col-lg-3">
+                                <div class="p-2 rounded" style="background:#d1fae5;font-size:.82rem">
+                                    <strong style="color:#065f46">CHECKED_IN</strong><br>
+                                    Guest is currently staying in the room.
+                                </div>
+                            </div>
+                            <div class="col-sm-6 col-lg-3">
+                                <div class="p-2 rounded" style="background:#f3f4f6;font-size:.82rem">
+                                    <strong style="color:#374151">CHECKED_OUT</strong><br>
+                                    Guest has left and bill is settled.
+                                </div>
+                            </div>
+                            <div class="col-sm-6 col-lg-3">
+                                <div class="p-2 rounded" style="background:#fee2e2;font-size:.82rem">
+                                    <strong style="color:#991b1b">CANCELLED</strong><br>
+                                    Reservation was cancelled before arrival.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Guests -->
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#sec3">
+                        <i class="bi bi-people me-2"></i>Guests — Add, Edit &amp; Search
+                    </button>
+                </h2>
+                <div id="sec3" class="accordion-collapse collapse" data-bs-parent="#helpAccordion">
+                    <div class="accordion-body">
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <h6 class="fw-semibold mb-3" style="color:var(--primary)">Adding a New Guest</h6>
+                                <ol class="step-list">
+                                    <li><span class="step-num">1</span><span>Go to <strong>Guests</strong> page.</span></li>
+                                    <li><span class="step-num">2</span><span>Click <strong>Add Guest</strong>.</span></li>
+                                    <li><span class="step-num">3</span><span>Fill in <strong>Full Name</strong>, <strong>Phone</strong>, and optionally <strong>Email</strong> and <strong>ID Number</strong>.</span></li>
+                                    <li><span class="step-num">4</span><span>Click <strong>Save</strong>. The guest is now available when creating reservations.</span></li>
+                                </ol>
+                                <div class="note-box">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    Always add the guest profile <em>before</em> creating their reservation.
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="fw-semibold mb-3" style="color:var(--primary)">Searching &amp; Editing Guests</h6>
+                                <ul class="step-list">
+                                    <li><span class="step-num"><i class="bi bi-search" style="font-size:.6rem"></i></span><span>Use the <strong>search bar</strong> to find a guest by name, phone, or email.</span></li>
+                                    <li><span class="step-num"><i class="bi bi-pencil" style="font-size:.6rem"></i></span><span>Click the <strong>pencil icon</strong> next to a guest to edit their details.</span></li>
+                                    <li><span class="step-num"><i class="bi bi-trash" style="font-size:.6rem"></i></span><span>Click the <strong>trash icon</strong> to delete a guest. <em>Note: guests with active reservations cannot be deleted.</em></span></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. Rooms -->
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#sec4">
+                        <i class="bi bi-door-open me-2"></i>Rooms — Availability &amp; Status Management
+                    </button>
+                </h2>
+                <div id="sec4" class="accordion-collapse collapse" data-bs-parent="#helpAccordion">
+                    <div class="accordion-body">
+                        <div class="row g-4">
+                            <div class="col-md-4">
+                                <h6 class="fw-semibold mb-3" style="color:var(--primary)">Check Availability</h6>
+                                <ol class="step-list">
+                                    <li><span class="step-num">1</span><span>Go to <strong>Rooms</strong> page.</span></li>
+                                    <li><span class="step-num">2</span><span>In the <strong>Check Room Availability</strong> section, select a Room Type (optional).</span></li>
+                                    <li><span class="step-num">3</span><span>Enter <strong>Check-in</strong> and <strong>Check-out</strong> dates.</span></li>
+                                    <li><span class="step-num">4</span><span>Click <strong>Check Availability</strong>. Available rooms will be listed grouped by type.</span></li>
+                                </ol>
+                            </div>
+                            <div class="col-md-4">
+                                <h6 class="fw-semibold mb-3" style="color:#2e7d32">Mark a Room as Available</h6>
+                                <ol class="step-list">
+                                    <li><span class="step-num">1</span><span>In the rooms list, find a room that shows <strong>OCCUPIED</strong> or <strong>MAINTENANCE</strong>.</span></li>
+                                    <li><span class="step-num">2</span><span>Click the green <strong><i class="bi bi-check-circle"></i> Mark Available</strong> button next to it.</span></li>
+                                    <li><span class="step-num">3</span><span>Confirm the action. The room is now <strong>AVAILABLE</strong> for new reservations.</span></li>
+                                </ol>
+                                <div class="tip-box">
+                                    <i class="bi bi-lightbulb me-1"></i>
+                                    Rooms are also auto-released when payment is fully processed.
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <h6 class="fw-semibold mb-3" style="color:#991b1b">
+                                    Manage Rooms <span class="badge-admin">ADMIN</span>
+                                </h6>
+                                <ol class="step-list">
+                                    <li><span class="step-num">1</span><span>Click <strong>Add Room</strong> (top-right of the rooms list).</span></li>
+                                    <li><span class="step-num">2</span><span>Fill in Room Number, Floor, Type, and Status.</span></li>
+                                    <li><span class="step-num">3</span><span>To <strong>edit</strong> a room, click the <i class="bi bi-pencil"></i> pencil icon.</span></li>
+                                    <li><span class="step-num">4</span><span>To <strong>delete</strong> a room, click the <i class="bi bi-trash"></i> trash icon. Rooms with active reservations cannot be deleted.</span></li>
+                                </ol>
+                            </div>
+                        </div>
+
+                        <hr class="my-3">
+                        <h6 class="fw-semibold mb-2" style="color:var(--primary)">Room Types</h6>
+                        <div class="row g-2">
+                            <div class="col-sm-6 col-lg-3">
+                                <div class="p-2 rounded d-flex align-items-center gap-2" style="background:#e3f2fd">
+                                    <i class="bi bi-house-door-fill" style="color:#1565c0;font-size:1.2rem"></i>
+                                    <div style="font-size:.82rem"><strong style="color:#1565c0">Single</strong><br>One guest, standard amenities</div>
+                                </div>
+                            </div>
+                            <div class="col-sm-6 col-lg-3">
+                                <div class="p-2 rounded d-flex align-items-center gap-2" style="background:#e8f5e9">
+                                    <i class="bi bi-houses-fill" style="color:#2e7d32;font-size:1.2rem"></i>
+                                    <div style="font-size:.82rem"><strong style="color:#2e7d32">Double</strong><br>Two guests, spacious room</div>
+                                </div>
+                            </div>
+                            <div class="col-sm-6 col-lg-3">
+                                <div class="p-2 rounded d-flex align-items-center gap-2" style="background:#fff3e0">
+                                    <i class="bi bi-stars" style="color:#e65100;font-size:1.2rem"></i>
+                                    <div style="font-size:.82rem"><strong style="color:#e65100">Deluxe</strong><br>Premium furnishings, extra space</div>
+                                </div>
+                            </div>
+                            <div class="col-sm-6 col-lg-3">
+                                <div class="p-2 rounded d-flex align-items-center gap-2" style="background:#f3e5f5">
+                                    <i class="bi bi-gem" style="color:#6a1b9a;font-size:1.2rem"></i>
+                                    <div style="font-size:.82rem"><strong style="color:#6a1b9a">Suite</strong><br>Luxury suite, full amenities</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. Billing -->
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#sec5">
+                        <i class="bi bi-receipt me-2"></i>Billing — Bills, Payments &amp; Checkout
+                    </button>
+                </h2>
+                <div id="sec5" class="accordion-collapse collapse" data-bs-parent="#helpAccordion">
+                    <div class="accordion-body">
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <h6 class="fw-semibold mb-3" style="color:var(--primary)">Generate a Bill</h6>
+                                <ol class="step-list">
+                                    <li><span class="step-num">1</span><span>Go to <strong>Billing</strong> page.</span></li>
+                                    <li><span class="step-num">2</span><span>Click <strong>Generate Bill</strong>.</span></li>
+                                    <li><span class="step-num">3</span><span>Search for the reservation by number or guest name and select it.</span></li>
+                                    <li><span class="step-num">4</span><span>The bill is calculated automatically: <em>nightly rate × number of nights</em>.</span></li>
+                                    <li><span class="step-num">5</span><span>Click <strong>Generate</strong>. The bill appears in the list as <strong>PENDING</strong>.</span></li>
+                                </ol>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="fw-semibold mb-3" style="color:var(--primary)">
+                                    Process Payment <span class="badge-admin">ADMIN</span>
+                                </h6>
+                                <ol class="step-list">
+                                    <li><span class="step-num">1</span><span>Find the bill in the list and click <strong>View / Pay</strong>.</span></li>
+                                    <li><span class="step-num">2</span><span>Admins can add <strong>Discounts</strong> or extra <strong>Charges</strong> before payment.</span></li>
+                                    <li><span class="step-num">3</span><span>Click <strong>Process Payment</strong>. Enter admin credentials if prompted.</span></li>
+                                    <li><span class="step-num">4</span><span>Choose payment method and confirm the amount.</span></li>
+                                    <li><span class="step-num">5</span><span>Bill status changes to <strong>PAID</strong>. The room is automatically released.</span></li>
+                                </ol>
+                                <div class="warn-box">
+                                    <i class="bi bi-exclamation-triangle me-1"></i>
+                                    Only administrators can process payments, apply discounts, or add charges. Receptionists can view bills but not modify them.
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-3">
+                        <h6 class="fw-semibold mb-2" style="color:var(--primary)">Bill Statuses</h6>
+                        <div class="row g-2">
+                            <div class="col-sm-4">
+                                <div class="p-2 rounded" style="background:#fef3c7;font-size:.82rem">
+                                    <strong style="color:#92400e">PENDING</strong><br>Bill generated, payment not yet received.
+                                </div>
+                            </div>
+                            <div class="col-sm-4">
+                                <div class="p-2 rounded" style="background:#dbeafe;font-size:.82rem">
+                                    <strong style="color:#1e40af">PARTIAL</strong><br>Partial payment received; balance remaining.
+                                </div>
+                            </div>
+                            <div class="col-sm-4">
+                                <div class="p-2 rounded" style="background:#d1fae5;font-size:.82rem">
+                                    <strong style="color:#065f46">PAID</strong><br>Full payment received. Room released.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6. Reports (Admin) -->
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#sec6">
+                        <i class="bi bi-bar-chart-line me-2"></i>Reports
+                        <span class="badge-admin ms-2">ADMIN</span>
+                    </button>
+                </h2>
+                <div id="sec6" class="accordion-collapse collapse" data-bs-parent="#helpAccordion">
+                    <div class="accordion-body">
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <h6 class="fw-semibold mb-3" style="color:var(--primary)">Generating Reports</h6>
+                                <ol class="step-list">
+                                    <li><span class="step-num">1</span><span>Go to <strong>Reports</strong> (admin only).</span></li>
+                                    <li><span class="step-num">2</span><span>Select a period: <strong>Daily</strong>, <strong>Weekly</strong>, <strong>Monthly</strong>, <strong>Yearly</strong>, or <strong>Custom</strong> date range.</span></li>
+                                    <li><span class="step-num">3</span><span>Click <strong>Generate Report</strong>. All five report types will load below.</span></li>
+                                </ol>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="fw-semibold mb-3" style="color:var(--primary)">Report Types</h6>
+                                <ul class="step-list">
+                                    <li><span class="step-num"><i class="bi bi-building" style="font-size:.55rem"></i></span><span><strong>Occupancy</strong> — room utilisation rates per type</span></li>
+                                    <li><span class="step-num"><i class="bi bi-currency-dollar" style="font-size:.55rem"></i></span><span><strong>Revenue</strong> — total income by day or period</span></li>
+                                    <li><span class="step-num"><i class="bi bi-people" style="font-size:.55rem"></i></span><span><strong>Guest History</strong> — guest activity and visit counts</span></li>
+                                    <li><span class="step-num"><i class="bi bi-person-gear" style="font-size:.55rem"></i></span><span><strong>Staff Activity</strong> — reservations handled per staff</span></li>
+                                    <li><span class="step-num"><i class="bi bi-pie-chart" style="font-size:.55rem"></i></span><span><strong>Status Summary</strong> — current reservation status breakdown</span></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 7. Staff Management (Admin) -->
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#sec7">
+                        <i class="bi bi-person-gear me-2"></i>Staff Management
+                        <span class="badge-admin ms-2">ADMIN</span>
+                    </button>
+                </h2>
+                <div id="sec7" class="accordion-collapse collapse" data-bs-parent="#helpAccordion">
+                    <div class="accordion-body">
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <h6 class="fw-semibold mb-3" style="color:var(--primary)">Adding a New Staff Member</h6>
+                                <ol class="step-list">
+                                    <li><span class="step-num">1</span><span>Go to <strong>Staff</strong> page (admin only).</span></li>
+                                    <li><span class="step-num">2</span><span>Click <strong>Add Staff</strong>.</span></li>
+                                    <li><span class="step-num">3</span><span>Enter <strong>Full Name</strong>, <strong>Username</strong>, and <strong>Password</strong>.</span></li>
+                                    <li><span class="step-num">4</span><span>Select their <strong>Role</strong>: <em>Admin</em> or <em>Receptionist</em>.</span></li>
+                                    <li><span class="step-num">5</span><span>Email and Phone are optional but recommended.</span></li>
+                                    <li><span class="step-num">6</span><span>Click <strong>Save</strong>. The staff member can now log in.</span></li>
+                                </ol>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="fw-semibold mb-3" style="color:var(--primary)">Editing &amp; Removing Staff</h6>
+                                <ul class="step-list">
+                                    <li><span class="step-num"><i class="bi bi-pencil" style="font-size:.6rem"></i></span><span>Click the <strong>pencil</strong> icon to edit a staff member's name, role, or password.</span></li>
+                                    <li><span class="step-num"><i class="bi bi-trash" style="font-size:.6rem"></i></span><span>Click the <strong>trash</strong> icon to remove a staff member.</span></li>
+                                </ul>
+                                <div class="warn-box">
+                                    <i class="bi bi-exclamation-triangle me-1"></i>
+                                    Staff with existing reservations linked to their account cannot be deleted. Reassign those reservations first.
+                                </div>
+                                <div class="note-box mt-2">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    You cannot delete your own account while logged in.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- end accordion -->
+
+        <!-- Quick Reference -->
+        <div class="card-box mt-4">
+            <h6 class="fw-bold mb-3" style="color:var(--primary)">
+                <i class="bi bi-lightning-fill me-2" style="color:var(--accent)"></i>
+                Quick Reference — Common Workflows
+            </h6>
+            <div class="table-responsive">
+                <table class="table qref-table table-bordered mb-0">
+                    <thead>
+                        <tr>
+                            <th>Task</th>
+                            <th>Where to go</th>
+                            <th>Who can do it</th>
+                            <th>Key steps</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><i class="bi bi-plus-circle text-primary me-1"></i> New reservation</td>
+                            <td>Reservations</td>
+                            <td>All staff</td>
+                            <td>New Reservation → Guest → Room → Dates → Confirm</td>
+                        </tr>
+                        <tr>
+                            <td><i class="bi bi-box-arrow-in-right text-success me-1"></i> Check in guest</td>
+                            <td>Reservations</td>
+                            <td>All staff</td>
+                            <td>Find reservation (CONFIRMED) → Check In</td>
+                        </tr>
+                        <tr>
+                            <td><i class="bi bi-receipt text-warning me-1"></i> Generate bill</td>
+                            <td>Billing</td>
+                            <td>All staff</td>
+                            <td>Generate Bill → Select reservation → Confirm</td>
+                        </tr>
+                        <tr>
+                            <td><i class="bi bi-credit-card text-danger me-1"></i> Process payment</td>
+                            <td>Billing</td>
+                            <td><span class="badge-admin">ADMIN</span></td>
+                            <td>View bill → Process Payment → Enter amount → Confirm</td>
+                        </tr>
+                        <tr>
+                            <td><i class="bi bi-box-arrow-right text-secondary me-1"></i> Check out guest</td>
+                            <td>Reservations</td>
+                            <td>All staff</td>
+                            <td>Find reservation (CHECKED_IN, bill PAID) → Check Out</td>
+                        </tr>
+                        <tr>
+                            <td><i class="bi bi-check-circle text-success me-1"></i> Mark room available</td>
+                            <td>Rooms</td>
+                            <td>All staff</td>
+                            <td>Find OCCUPIED room → Mark Available button</td>
+                        </tr>
+                        <tr>
+                            <td><i class="bi bi-person-plus text-primary me-1"></i> Add new guest</td>
+                            <td>Guests</td>
+                            <td>All staff</td>
+                            <td>Add Guest → Fill name &amp; phone → Save</td>
+                        </tr>
+                        <tr>
+                            <td><i class="bi bi-bar-chart-line me-1" style="color:#6a1b9a"></i> View reports</td>
+                            <td>Reports</td>
+                            <td><span class="badge-admin">ADMIN</span></td>
+                            <td>Select period → Generate Report</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div><!-- end content-area -->
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/app.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function(){
+        initPage('help.html');
+    });
+</script>
+</body>
+</html>
