@@ -247,7 +247,7 @@
     // ══════════════════════════════════════════════
     //  LOAD DASHBOARD — no loading states shown
     // ══════════════════════════════════════════════
-    async function loadDashboard(){
+       async function loadDashboard(){
         // ✅ Fire both requests in parallel — no spinners, data fills in when ready
         var results = await Promise.allSettled([
             API.get('api/reservations'),

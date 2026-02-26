@@ -288,13 +288,16 @@
                     </div>
                 </div>
 
-                <div class="mt-3 d-flex gap-2">
+                <div class="mt-3 d-flex gap-2 align-items-center flex-wrap">
                     <button type="button" class="btn btn-hotel px-4" onclick="applyAdjustments()">
                         <i class="bi bi-check-circle me-1"></i>Apply & Save Adjustments
                     </button>
                     <button type="button" class="btn btn-outline-secondary" onclick="resetAdjustments()">
                         <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
                     </button>
+                    <span id="adjAuthHint" class="d-none text-muted" style="font-size:.78rem">
+                        <i class="bi bi-shield-lock me-1 text-danger"></i>Admin authorization required for staff
+                    </span>
                 </div>
             </div>
         </div>
@@ -338,6 +341,58 @@
             </div>
         </div>
 
+    </div>
+</div>
+
+<!-- ══════════ ADMIN AUTH MODAL ══════════ -->
+<div class="modal fade" id="adminAuthModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:420px">
+        <div class="modal-content">
+            <div class="modal-header" style="background:linear-gradient(135deg,#c62828,#b71c1c)">
+                <h5 class="modal-title text-white">
+                    <i class="bi bi-shield-lock me-2"></i>Admin Authorization Required
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" onclick="cancelAdminAuth()"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="text-center mb-4">
+                    <div style="width:64px;height:64px;background:#fee2e2;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto .75rem;font-size:1.75rem;color:#c62828">
+                        <i class="bi bi-shield-exclamation"></i>
+                    </div>
+                    <p class="text-muted mb-0" style="font-size:.875rem">
+                        This action requires admin approval.<br>
+                        Please enter admin credentials to proceed.
+                    </p>
+                    <div id="authActionLabel" class="mt-2 p-2 rounded" style="background:#fef3c7;color:#92400e;font-size:.8rem;font-weight:600"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Admin Username</label>
+                    <input type="text" id="auth_username" class="form-control" placeholder="Enter admin username"
+                           onkeydown="if(event.key==='Enter') submitAdminAuth()">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Admin Password</label>
+                    <div class="input-group">
+                        <input type="password" id="auth_password" class="form-control" placeholder="Enter admin password"
+                               onkeydown="if(event.key==='Enter') submitAdminAuth()">
+                        <button type="button" class="btn btn-outline-secondary" onclick="toggleAuthPass()">
+                            <i class="bi bi-eye" id="auth_eyeIcon"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="authErr" class="alert alert-danger d-none py-2" style="font-size:.85rem"></div>
+                <div id="authAttemptBox" class="alert alert-warning d-none py-2 text-center" style="font-size:.82rem"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="cancelAdminAuth()">Cancel</button>
+                <button type="button" id="btnAuth" class="btn px-4 fw-bold" style="background:linear-gradient(135deg,#c62828,#b71c1c);color:#fff;border:none;border-radius:10px" onclick="submitAdminAuth()">
+                    <span id="btnAuthText"><i class="bi bi-shield-check me-1"></i>Authorize</span>
+                    <span id="btnAuthSpin" class="d-none">
+                        <span class="spinner-border spinner-border-sm me-1"></span>Verifying…
+                    </span>
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -446,6 +501,139 @@
 <script>
     'use strict';
 
+    // ══════════════════════════════════════════════
+    //  ADMIN AUTH GATE
+    //  Staff users must enter admin credentials to
+    //  access payment processing and bill adjustments.
+    //  Admins bypass the gate automatically.
+    // ══════════════════════════════════════════════
+    var adminAuthCallback  = null;   // function to run after successful auth
+    var adminAuthAttempts  = 0;
+    var ADMIN_AUTH_KEY     = 'billing_admin_unlocked';
+    var ADMIN_AUTH_EXPIRY  = 30 * 60 * 1000;  // 30 minutes
+
+    function isAdminUnlocked(){
+        // Admins are always unlocked
+        if (Auth.isAdmin()) return true;
+        // Check session flag with expiry
+        try {
+            var raw = sessionStorage.getItem(ADMIN_AUTH_KEY);
+            if (!raw) return false;
+            var ts = parseInt(raw);
+            return (Date.now() - ts) < ADMIN_AUTH_EXPIRY;
+        } catch(e){ return false; }
+    }
+
+    function setAdminUnlocked(){
+        try { sessionStorage.setItem(ADMIN_AUTH_KEY, String(Date.now())); } catch(e){}
+    }
+
+    // Called before any privileged action. If unlocked, runs cb immediately.
+    // Otherwise shows the admin auth modal, stores cb as callback.
+    function requireAdminAuth(actionLabel, cb){
+        if (isAdminUnlocked()){
+            cb();
+            return;
+        }
+        adminAuthCallback  = cb;
+        adminAuthAttempts  = 0;
+        document.getElementById('auth_username').value   = '';
+        document.getElementById('auth_password').value   = '';
+        document.getElementById('authErr').classList.add('d-none');
+        document.getElementById('authAttemptBox').classList.add('d-none');
+        document.getElementById('authActionLabel').textContent = actionLabel;
+        document.getElementById('btnAuth').disabled = false;
+        getModal('adminAuthModal').show();
+        // Focus username field after modal shown
+        document.getElementById('adminAuthModal').addEventListener('shown.bs.modal', function handler(){
+            document.getElementById('auth_username').focus();
+            document.getElementById('adminAuthModal').removeEventListener('shown.bs.modal', handler);
+        });
+    }
+
+    async function submitAdminAuth(){
+        if (document.getElementById('btnAuth').disabled) return;
+
+        var username = document.getElementById('auth_username').value.trim();
+        var password = document.getElementById('auth_password').value;
+
+        document.getElementById('authErr').classList.add('d-none');
+
+        if (!username || !password){
+            var e = document.getElementById('authErr');
+            e.textContent = 'Please enter both username and password.';
+            e.classList.remove('d-none');
+            return;
+        }
+
+        document.getElementById('btnAuthText').classList.add('d-none');
+        document.getElementById('btnAuthSpin').classList.remove('d-none');
+        document.getElementById('btnAuth').disabled = true;
+
+        try {
+            var resp = await fetch(window.location.origin + '/api/auth/login', {
+                method : 'POST',
+                headers: { 'Content-Type':'application/json' },
+                body   : JSON.stringify({ username: username, password: password })
+            });
+            var data;
+            try { data = await resp.json(); } catch(ex){ data = {}; }
+
+            if (resp.ok && data.token && (data.role||'').toLowerCase() === 'admin'){
+                // Verified admin credentials
+                setAdminUnlocked();
+                adminAuthAttempts = 0;
+                getModal('adminAuthModal').hide();
+                Toast.show('Admin access granted', 'success', 2500);
+                if (adminAuthCallback){ var fn = adminAuthCallback; adminAuthCallback = null; fn(); }
+            } else if (resp.ok && data.token && (data.role||'').toLowerCase() !== 'admin'){
+                adminAuthAttempts++;
+                var e2 = document.getElementById('authErr');
+                e2.textContent = 'Those are not admin credentials. Only admins can authorize this action.';
+                e2.classList.remove('d-none');
+                document.getElementById('auth_password').value = '';
+                document.getElementById('btnAuth').disabled = false;
+            } else {
+                adminAuthAttempts++;
+                var left = 3 - adminAuthAttempts;
+                var e3 = document.getElementById('authErr');
+                e3.textContent = data.error || 'Incorrect credentials.';
+                e3.classList.remove('d-none');
+                document.getElementById('auth_password').value = '';
+                if (left > 0){
+                    var ab = document.getElementById('authAttemptBox');
+                    ab.textContent = left + ' attempt' + (left>1?'s':'') + ' remaining';
+                    ab.classList.remove('d-none');
+                    document.getElementById('btnAuth').disabled = false;
+                } else {
+                    document.getElementById('authErr').textContent = 'Too many failed attempts. Authorization cancelled.';
+                    document.getElementById('btnAuth').disabled = true;
+                    adminAuthCallback = null;
+                    setTimeout(function(){ getModal('adminAuthModal').hide(); }, 2000);
+                }
+            }
+        } catch(err){
+            var e4 = document.getElementById('authErr');
+            e4.textContent = 'Cannot verify credentials. Check server connection.';
+            e4.classList.remove('d-none');
+            document.getElementById('btnAuth').disabled = false;
+        } finally {
+            document.getElementById('btnAuthText').classList.remove('d-none');
+            document.getElementById('btnAuthSpin').classList.add('d-none');
+        }
+    }
+
+    function toggleAuthPass(){
+        var inp = document.getElementById('auth_password');
+        var ico = document.getElementById('auth_eyeIcon');
+        inp.type = inp.type === 'password' ? 'text' : 'password';
+        ico.className = inp.type === 'password' ? 'bi bi-eye' : 'bi bi-eye-slash';
+    }
+
+    function cancelAdminAuth(){
+        adminAuthCallback = null;
+    }
+
     // ── Global state ──────────────────────────────────────────────
     var allBills      = [];
     var actBillId     = 0;
@@ -461,6 +649,11 @@
     document.addEventListener('DOMContentLoaded', function(){
         initPage('billing.html');
         loadBills();
+        // Show admin-required hints for staff users
+        if (!Auth.isAdmin()){
+            var hint = document.getElementById('adjAuthHint');
+            if (hint) hint.classList.remove('d-none');
+        }
     });
 
     // ══════════════════════════════════════════════
@@ -677,7 +870,11 @@
     //  Updates genBill locally + saves to sessionStorage
     //  Then calls showBillReceipt so the Pay button uses correct total
     // ══════════════════════════════════════════════
-    async function applyAdjustments(){
+    function applyAdjustments(){
+        if (!genBill){ Toast.show('Generate a bill first','warning'); return; }
+        requireAdminAuth('Apply Adjustments — Discounts & Add-ons for ' + (genBill.billNumber||'this bill'), _applyAdjustments);
+    }
+    async function _applyAdjustments(){
         if (!genBill){ Toast.show('Generate a bill first','warning'); return; }
 
         var taxRate    = parseFloat(document.getElementById('taxRate').value)        || 0;
@@ -1127,6 +1324,10 @@
     // genBill is always up-to-date (updated by applyAdjustments)
     function openPayFromReceipt(){
         if (!genBill){ Toast.show('No bill loaded','warning'); return; }
+        requireAdminAuth('Process Payment — ' + (genBill.billNumber||''), _openPayFromReceipt);
+    }
+    function _openPayFromReceipt(){
+        if (!genBill){ Toast.show('No bill loaded','warning'); return; }
         var sub      = parseFloat(genBill.subtotal       || 0);
         var disc     = parseFloat(genBill.discountAmount || 0);
         var taxAmt   = parseFloat(genBill.taxAmount      || 0);
@@ -1138,6 +1339,11 @@
 
     // Called by Pay button in the bills list table
     function openPayFromList(billId, billNo, sub, disc, taxAmt, addTax){
+        requireAdminAuth('Process Payment — ' + (billNo||'Bill #'+billId), function(){
+            _openPayFromList(billId, billNo, sub, disc, taxAmt, addTax);
+        });
+    }
+    function _openPayFromList(billId, billNo, sub, disc, taxAmt, addTax){
         var s  = parseFloat(sub)    || 0;
         var d  = parseFloat(disc)   || 0;
         var t  = parseFloat(taxAmt) || 0;
@@ -1162,7 +1368,7 @@
         }
         // Also prefer genBill if it matches
         if (genBill && genBill.billId === billId){
-            openPayFromReceipt();
+            _openPayFromReceipt();
             return;
         }
         openPayModal(billId, billNo, total, d);
@@ -1236,6 +1442,9 @@
 
             if (newStatus === 'PAID'){
                 try { sessionStorage.removeItem('bill_adj_' + actBillId); } catch(e){}
+
+                // ✅ On full payment: mark reservation CHECKED_OUT + set room back to AVAILABLE
+                await checkoutAndFreeRoom(actBillId);
             }
 
             Toast.show(
@@ -1261,6 +1470,75 @@
             e.classList.remove('d-none');
         } finally {
             setBL('btnPay','btnPayText','btnPaySpin', false);
+        }
+    }
+
+    // ══════════════════════════════════════════════
+    //  CHECKOUT & ROOM AVAILABILITY UPDATE
+    //  Called automatically when payment = PAID
+    //  Flow: find reservation → CHECKED_OUT → room AVAILABLE
+    // ══════════════════════════════════════════════
+    async function checkoutAndFreeRoom(billId){
+        try {
+            var bill = (genBill && genBill.billId === billId)
+                ? genBill
+                : allBills.find(function(b){ return b.billId === billId; });
+            if (!bill) return;
+
+            var resNo = bill.reservationNumber;
+            if (!resNo) return;
+
+            // Fetch reservations to get IDs
+            var allRes = await API.get('api/reservations');
+            if (!Array.isArray(allRes)) return;
+            var res = allRes.find(function(r){ return r.reservationNumber === resNo; });
+            if (!res) return;
+
+            var resId  = res.reservationId || res.id;
+            var roomId = res.roomId || (res.room && res.room.roomId);
+            var roomNo = res.roomNumber || (res.room && res.room.roomNumber) || roomId;
+
+            // 1 — Mark reservation CHECKED_OUT (try multiple endpoint patterns)
+            var checkedOut = false;
+            var resEps = [
+                ['put',  'api/reservations/' + resId + '/checkout',  {}],
+                ['put',  'api/reservations/' + resId + '/status',    {status:'CHECKED_OUT'}],
+                ['put',  'api/reservations/' + resId,                Object.assign({}, res, {status:'CHECKED_OUT'})],
+                ['post', 'api/reservations/' + resId + '/checkout',  {}]
+            ];
+            for (var i = 0; i < resEps.length && !checkedOut; i++){
+                try {
+                    if (resEps[i][0]==='put') await API.put(resEps[i][1], resEps[i][2]);
+                    else                      await API.post(resEps[i][1], resEps[i][2]);
+                    checkedOut = true;
+                } catch(e){}
+            }
+
+            // 2 — Mark room AVAILABLE (try multiple endpoint patterns)
+            if (roomId){
+                var roomFreed = false;
+                var roomEps = [
+                    ['put',  'api/rooms/' + roomId + '/available',  {}],
+                    ['put',  'api/rooms/' + roomId + '/status',     {status:'AVAILABLE', roomStatus:'AVAILABLE'}],
+                    ['put',  'api/rooms/' + roomId,                 {roomStatus:'AVAILABLE'}],
+                    ['post', 'api/rooms/' + roomId + '/available',  {}]
+                ];
+                for (var j = 0; j < roomEps.length && !roomFreed; j++){
+                    try {
+                        if (roomEps[j][0]==='put') await API.put(roomEps[j][1], roomEps[j][2]);
+                        else                       await API.post(roomEps[j][1], roomEps[j][2]);
+                        roomFreed = true;
+                    } catch(e){}
+                }
+                if (roomFreed){
+                    Toast.show('🏨 Room ' + roomNo + ' is now available', 'info', 3500);
+                }
+            }
+            if (checkedOut){
+                Toast.show('✅ Guest checked out — reservation updated', 'success', 3000);
+            }
+        } catch(err){
+            console.warn('checkoutAndFreeRoom:', err.message);
         }
     }
 

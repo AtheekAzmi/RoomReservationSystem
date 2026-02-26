@@ -91,7 +91,7 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     // Already logged in → go to dashboard
-    if (localStorage.getItem('token')) {
+    if (sessionStorage.getItem('token')) {
         window.location.href = 'dashboard.html';
     }
 
@@ -162,10 +162,10 @@
             }
 
             if (resp.ok && data.token) {
-                localStorage.setItem('token',    data.token);
-                localStorage.setItem('role',     data.role);
-                localStorage.setItem('fullName', data.fullName);
-                localStorage.setItem('staffId',  String(data.staffId));
+                sessionStorage.setItem('token',    data.token);
+                sessionStorage.setItem('role',     data.role);
+                sessionStorage.setItem('userName', data.fullName);   // app.js uses 'userName'
+                sessionStorage.setItem('staffId',  String(data.staffId));
                 window.location.href = 'dashboard.html';
             } else {
                 attempts++;

@@ -18,7 +18,7 @@
 
     <dependencies>
 
-        <!-- Tomcat 10 = Jakarta EE 10 ✅ -->
+        <!-- Tomcat 10 = Jakarta EE 10 -->
         <dependency>
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
@@ -56,56 +56,3 @@
     </build>
 
 </project>
-<!--        ```-->
-
-<!--        -&#45;&#45;-->
-
-<!--        ## Fix 3 — Fix the 404 (reservations.html not found)-->
-
-<!--        The HTML file is missing from the correct location. Here's what to check and fix:-->
-
-<!--        ### Check Your Folder Structure Right Now-->
-
-<!--        In IntelliJ left panel, verify it looks **exactly** like this:-->
-<!--        ```-->
-<!--        src/-->
-<!--        └── main/-->
-<!--        └── webapp/           ← HTML must be HERE-->
-<!--        ├── index.html-->
-<!--        ├── dashboard.html-->
-<!--        ├── reservations.html    ← MUST be here-->
-<!--        ├── css/-->
-<!--        │   └── style.css-->
-<!--        ├── js/-->
-<!--        │   └── app.js-->
-<!--        └── WEB-INF/-->
-<!--        └── web.xml-->
-<!--        ```-->
-
-<!--        -&#45;&#45;-->
-
-<!--        ### If `reservations.html` Is in Wrong Place-->
-
-<!--        From your screenshot I can see `reservations.html` might be somewhere else. **Move it:**-->
-
-<!--        Right-click `reservations.html` → **Refactor → Move** → select `src/main/webapp/`-->
-
-<!--        -&#45;&#45;-->
-
-<!--        ## Fix 4 — Fix SmartTomcat Deployment Directory-->
-
-<!--        **Run → Edit Configurations → SmartTomcat (HotelApp)**-->
-
-<!--        Make sure:-->
-
-<!--        | Field | Correct Value |-->
-<!--        |-&#45;&#45;|-&#45;&#45;|-->
-<!--        | Deployment Directory | `src\main\webapp` |-->
-<!--        | Context Path | `/` |-->
-<!--        | Server Port | `8080` |-->
-
-<!--        It should look like this:-->
-<!--        ```-->
-<!--        Deployment Directory: E:\AdvancePrgramming\RoomReservationSystem\src\main\webapp-->
-<!--        Context Path: /-->
-<!--        Server Port: 8080-->
