@@ -242,8 +242,8 @@
                     <div class="col-md-6">
                         <label class="form-label fw-semibold">Role <span class="text-danger">*</span></label>
                         <select id="add_role" class="form-select">
-                            <option value="STAFF">Staff</option>
-                            <option value="ADMIN">Admin</option>
+                            <option value="receptionist">Receptionist</option>
+                            <option value="admin">Admin</option>
                         </select>
                     </div>
                     <div class="col-md-6">
@@ -317,8 +317,8 @@
                     <div class="col-md-6">
                         <label class="form-label fw-semibold">Role <span class="text-danger">*</span></label>
                         <select id="edit_role" class="form-select">
-                            <option value="STAFF">Staff</option>
-                            <option value="ADMIN">Admin</option>
+                            <option value="receptionist">Receptionist</option>
+                            <option value="admin">Admin</option>
                         </select>
                     </div>
                     <div class="col-md-6">
@@ -453,7 +453,7 @@
     function updateStats(list){
         var active   = list.filter(function(s){ return (s.status||'ACTIVE')==='ACTIVE'; }).length;
         var inactive = list.filter(function(s){ return s.status==='INACTIVE'; }).length;
-        var admins   = list.filter(function(s){ return (s.role||'').toUpperCase()==='ADMIN'; }).length;
+        var admins   = list.filter(function(s){ return (s.role||'').toLowerCase()==='admin'; }).length;
         document.getElementById('st-total').textContent    = list.length;
         document.getElementById('st-active').textContent   = active;
         document.getElementById('st-admins').textContent   = admins;
@@ -480,12 +480,13 @@
             var lastName  = s.lastName  || s.last_name  || '';
             var fullName  = s.fullName  || (firstName + ' ' + lastName).trim() || s.username || '—';
             var username  = s.username  || '—';
-            var role      = (s.role     || 'STAFF').toUpperCase();
+            var role      = (s.role     || 'receptionist').toLowerCase();
             var status    = (s.status   || 'ACTIVE').toUpperCase();
             var email     = s.email     || '—';
             var phone     = s.phone     || s.phoneNumber || '—';
             var initials  = ((firstName[0]||'') + (lastName[0]||'')).toUpperCase() || '?';
-            var avatarColor = role === 'ADMIN' ? '#c62828' : '#1565c0';
+            var avatarColor = role === 'admin' ? '#c62828' : '#1565c0';
+            var roleLabel = role.charAt(0).toUpperCase() + role.slice(1);
             var isSelf    = id === currentUserId;
 
             return '<tr class="fade-in">' +
@@ -499,8 +500,8 @@
                 '</div>' +
                 '</td>' +
                 '<td><code style="font-size:.8rem;color:var(--primary-lt)">@' + username + '</code></td>' +
-                '<td><span class="role-badge ' + (role==='ADMIN'?'role-admin':'role-staff') + '">' +
-                '<i class="bi ' + (role==='ADMIN'?'bi-shield-lock':'bi-person') + '"></i>' + role + '</span></td>' +
+                '<td><span class="role-badge ' + (role==='admin'?'role-admin':'role-staff') + '">' +
+                '<i class="bi ' + (role==='admin'?'bi-shield-lock':'bi-person') + '"></i>' + roleLabel + '</span></td>' +
                 '<td style="font-size:.82rem">' + phone + '</td>' +
                 '<td><span class="status-badge ' + (status==='ACTIVE'?'status-active':'status-inactive') + '">' +
                 '<i class="bi ' + (status==='ACTIVE'?'bi-circle-fill':'bi-circle') + '" style="font-size:.5rem"></i>' +
@@ -537,10 +538,10 @@
 
         var f = allStaff.filter(function(s){
             var name  = ((s.firstName||'') + ' ' + (s.lastName||'') + ' ' + (s.fullName||'') + ' ' + (s.username||'') + ' ' + (s.email||'')).toLowerCase();
-            var role   = (s.role   || 'STAFF').toUpperCase();
+            var role   = (s.role   || 'receptionist').toLowerCase();
             var status = (s.status || 'ACTIVE').toUpperCase();
             return (!q || name.includes(q)) &&
-                   (!rf || role === rf) &&
+                   (!rf || role === rf.toLowerCase()) &&
                    (!sf || status === sf);
         });
         renderStaff(f);
@@ -624,7 +625,7 @@
         document.getElementById('edit_password').value  = '';
         document.getElementById('edit_email').value     = s.email     || '';
         document.getElementById('edit_phone').value     = s.phone     || s.phoneNumber || '';
-        document.getElementById('edit_role').value      = (s.role     || 'STAFF').toUpperCase();
+        document.getElementById('edit_role').value      = (s.role     || 'receptionist').toLowerCase();
         document.getElementById('edit_status').value    = (s.status   || 'ACTIVE').toUpperCase();
 
         ['edit_firstName','edit_lastName','edit_username'].forEach(function(fid){
@@ -720,17 +721,18 @@
         var firstName = s.firstName || s.first_name || '';
         var lastName  = s.lastName  || s.last_name  || '';
         var fullName  = s.fullName  || (firstName + ' ' + lastName).trim() || s.username || '—';
-        var role      = (s.role   || 'STAFF').toUpperCase();
+        var role      = (s.role   || 'receptionist').toLowerCase();
         var status    = (s.status || 'ACTIVE').toUpperCase();
         var initials  = ((firstName[0]||'') + (lastName[0]||'')).toUpperCase() || '?';
-        var avatarColor = role === 'ADMIN' ? '#c62828' : '#1565c0';
+        var avatarColor = role === 'admin' ? '#c62828' : '#1565c0';
+        var roleLabel = role.charAt(0).toUpperCase() + role.slice(1);
 
         document.getElementById('viewBody').innerHTML =
             '<div class="text-center mb-4">' +
             '<div style="width:80px;height:80px;background:' + avatarColor + ';border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2rem;color:#fff;font-weight:700;margin:0 auto .75rem">' + initials + '</div>' +
             '<h5 class="fw-bold mb-1">' + fullName + '</h5>' +
-            '<span class="role-badge ' + (role==='ADMIN'?'role-admin':'role-staff') + '">' +
-            '<i class="bi ' + (role==='ADMIN'?'bi-shield-lock':'bi-person') + '"></i>' + role + '</span>' +
+            '<span class="role-badge ' + (role==='admin'?'role-admin':'role-staff') + '">' +
+            '<i class="bi ' + (role==='admin'?'bi-shield-lock':'bi-person') + '"></i>' + roleLabel + '</span>' +
             '</div>' +
             '<div style="background:#f8fafc;border-radius:12px;padding:1rem;border:1px solid #e8edf5">' +
             profileRow('bi-person','Username', '@' + (s.username||'—')) +
