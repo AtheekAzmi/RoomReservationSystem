@@ -85,6 +85,40 @@ public class RoomDAO {
         return list;
     }
 
+    /** Returns the room_type_id for the given type name, or -1 if not found. */
+    public int findTypeIdByName(String typeName) {
+        String sql = "SELECT room_type_id FROM room_type WHERE type_name = ?";
+        try (Connection c = DatabaseConfig.getInstance().getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1, typeName);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) return rs.getInt("room_type_id");
+        } catch (SQLException e) { e.printStackTrace(); }
+        return -1;
+    }
+
+    /** Returns true if a room with the given number already exists (excluding roomId for edit). */
+    public boolean roomNumberExists(String roomNumber, int excludeRoomId) {
+        String sql = "SELECT COUNT(*) FROM room WHERE room_number=? AND room_id != ?";
+        try (Connection c = DatabaseConfig.getInstance().getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1, roomNumber);
+            ps.setInt   (2, excludeRoomId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) return rs.getInt(1) > 0;
+        } catch (SQLException e) { e.printStackTrace(); }
+        return false;
+    }
+
+    public boolean delete(int roomId) {
+        String sql = "DELETE FROM room WHERE room_id=?";
+        try (Connection c = DatabaseConfig.getInstance().getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, roomId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) { e.printStackTrace(); return false; }
+    }
+
     public boolean updateStatus(int roomId, String status) {
         String sql = "UPDATE room SET room_status=? WHERE room_id=?";
         try (Connection c = DatabaseConfig.getInstance().getConnection();

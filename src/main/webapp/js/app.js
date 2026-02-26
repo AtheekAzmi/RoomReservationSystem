@@ -189,7 +189,8 @@ function buildSidebar(currentPage){
         { href:'rooms.html',        icon:'bi-door-open',      label:'Rooms' },
         { href:'billing.html',      icon:'bi-receipt',        label:'Billing' },
         { href:'reports.html',      icon:'bi-bar-chart-line', label:'Reports' },
-        { href:'staff.html',        icon:'bi-person-badge',   label:'Staff', adminOnly:true }
+        { href:'staff.html',        icon:'bi-person-badge',   label:'Staff', adminOnly:true },
+        { href:'help.html',         icon:'bi-question-circle',label:'Help & Guide' }
     ];
 
     // Quick action items (same destinations, shorter labels, action-oriented)
@@ -199,7 +200,8 @@ function buildSidebar(currentPage){
         { href:'rooms.html',        icon:'bi-search',         label:'Check Availability' },
         { href:'billing.html',      icon:'bi-lightning',      label:'Generate Bill' },
         { href:'reports.html',      icon:'bi-file-earmark-bar-graph', label:'View Reports' },
-        { href:'staff.html',        icon:'bi-person-gear',    label:'Manage Staff', adminOnly:true }
+        { href:'staff.html',        icon:'bi-person-gear',    label:'Manage Staff', adminOnly:true },
+        { href:'help.html',         icon:'bi-book',           label:'Help Guide' }
     ];
 
     var navHtml = navItems

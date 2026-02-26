@@ -38,26 +38,61 @@ public class RoomServlet extends BaseServlet {
         }
     }
 
-
+    @Override
+    protected void doPost(HttpServletRequest req,
+                          HttpServletResponse res) throws IOException {
+        if (!isAuthenticated(req)) { sendError(res,401,"Unauthorized"); return; }
+        if (!isAdmin(req))         { sendError(res,403,"Admin only");    return; }
+        try {
+            String body = readBody(req);
+            sendJson(res, 201, service.createRoom(new JSONObject(body)));
+        } catch (IllegalArgumentException e) {
+            sendError(res, 400, e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace(); sendError(res, 500, "Server error");
+        }
+    }
 
     @Override
     protected void doPut(HttpServletRequest req,
                          HttpServletResponse res) throws IOException {
         if (!isAuthenticated(req)) { sendError(res,401,"Unauthorized"); return; }
         try {
-            // PUT /api/rooms/{id}/status
-            String path    = req.getPathInfo(); // /{id}/status
+            String path    = req.getPathInfo(); // /{id} or /{id}/status
             String[] parts = path.split("/");
             int roomId     = Integer.parseInt(parts[1]);
             String body    = readBody(req);
-            String status  = new JSONObject(body).getString("roomStatus");
 
-            // All authenticated staff may mark a room AVAILABLE (e.g. after checkout).
-            // Only admins may set OCCUPIED or MAINTENANCE.
-            if (!"AVAILABLE".equals(status) && !isAdmin(req)) {
-                sendError(res, 403, "Admin only"); return;
+            if (parts.length >= 3 && "status".equals(parts[2])) {
+                // PUT /api/rooms/{id}/status — status-only update
+                String status = new JSONObject(body).getString("roomStatus");
+                // All authenticated staff may mark a room AVAILABLE.
+                // Only admins may set OCCUPIED or MAINTENANCE.
+                if (!"AVAILABLE".equals(status) && !isAdmin(req)) {
+                    sendError(res, 403, "Admin only"); return;
+                }
+                sendJson(res, 200, service.updateRoomStatus(roomId, status));
+            } else {
+                // PUT /api/rooms/{id} — full room update (admin only)
+                if (!isAdmin(req)) { sendError(res, 403, "Admin only"); return; }
+                sendJson(res, 200, service.updateRoom(roomId, new JSONObject(body)));
             }
-            sendJson(res, 200, service.updateRoomStatus(roomId, status));
+        } catch (IllegalArgumentException e) {
+            sendError(res, 400, e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace(); sendError(res, 500, "Server error");
+        }
+    }
+
+    @Override
+    protected void doDelete(HttpServletRequest req,
+                            HttpServletResponse res) throws IOException {
+        if (!isAuthenticated(req)) { sendError(res,401,"Unauthorized"); return; }
+        if (!isAdmin(req))         { sendError(res,403,"Admin only");    return; }
+        try {
+            String path = req.getPathInfo(); // /{id}
+            int roomId  = Integer.parseInt(path.split("/")[1]);
+            sendJson(res, 200, service.deleteRoom(roomId));
         } catch (IllegalArgumentException e) {
             sendError(res, 400, e.getMessage());
         } catch (Exception e) {

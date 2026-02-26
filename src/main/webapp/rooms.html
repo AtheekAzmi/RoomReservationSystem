@@ -150,14 +150,60 @@
             border-color:var(--primary);
         }
 
-        /* Available room card (in modal) */
+        /* Room type image banner */
+        .room-type-banner {
+            height:120px;
+            margin:-1.25rem -1.25rem 1rem;
+            display:flex; flex-direction:column;
+            align-items:center; justify-content:center;
+            position:relative;
+        }
+        .room-type-banner .rtb-icon {
+            font-size:2.8rem; opacity:.85; line-height:1;
+            position:relative; z-index:2;
+        }
+        .room-type-banner .rtb-label {
+            font-size:.7rem; font-weight:700;
+            letter-spacing:.8px; text-transform:uppercase;
+            margin-top:.45rem; opacity:.9;
+            position:relative; z-index:2;
+        }
+        /* Dark gradient overlay for photo banners */
+        .room-type-banner .rtb-overlay {
+            position:absolute; inset:0; z-index:1;
+            background:linear-gradient(to bottom,
+                rgba(0,0,0,.08) 0%, rgba(0,0,0,.48) 100%);
+        }
+        /* Status ribbon in top-right of banner */
+        .room-type-banner .rtb-status {
+            position:absolute; top:8px; right:10px;
+            font-size:.68rem; font-weight:700;
+            padding:.2rem .55rem; border-radius:20px;
+            letter-spacing:.4px; text-transform:uppercase;
+            background:rgba(255,255,255,.85);
+            z-index:2;
+        }
+
+        /* Available room card */
         .avail-card {
             border:2px solid #dee2e6; border-radius:8px;
-            padding:.75rem; cursor:pointer; transition:all .2s;
+            overflow:hidden; cursor:pointer; transition:all .2s;
         }
-        .avail-card:hover    { border-color:#2e6da4; background:#f0f8ff; }
-        .avail-card.selected {
-            border-color:var(--primary); background:#e8f0fe;
+        .avail-card:hover    { border-color:#2e6da4; box-shadow:0 2px 8px rgba(46,109,164,.15); }
+        .avail-card.selected { border-color:var(--primary); background:#e8f0fe; }
+        .avail-card .avail-banner {
+            height:70px; display:flex;
+            align-items:center; justify-content:center;
+            font-size:1.6rem;
+        }
+        .avail-card .avail-body { padding:.6rem .75rem; }
+
+        /* Table room-image thumb */
+        .room-thumb {
+            width:36px; height:36px; border-radius:8px;
+            display:inline-flex; align-items:center;
+            justify-content:center; font-size:1.1rem;
+            flex-shrink:0;
         }
 
         @media(max-width:768px){
@@ -314,7 +360,7 @@
                     style="color:var(--primary);font-weight:600">
                     <i class="bi bi-grid me-2"></i>All Rooms
                 </h6>
-                <div class="d-flex gap-2 flex-wrap">
+                <div class="d-flex gap-2 flex-wrap" id="roomHeaderBtns">
                     <!-- View Toggle -->
                     <div class="view-toggle btn-group">
                         <button type="button"
@@ -459,6 +505,154 @@
     </div>
 </div>
 
+<!-- ══════════ ADD ROOM MODAL ══════════ -->
+<div class="modal fade" id="addRoomModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-plus-circle me-2"></i>Add New Room
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">
+                        Room Number <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" id="add_roomNumber" class="form-control"
+                           placeholder="e.g. 101">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">
+                        Floor Number <span class="text-danger">*</span>
+                    </label>
+                    <input type="number" id="add_floor" class="form-control"
+                           min="1" max="50" placeholder="1 – 50">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Room Type</label>
+                    <select id="add_type" class="form-select">
+                        <option value="Single">Single</option>
+                        <option value="Double">Double</option>
+                        <option value="Deluxe">Deluxe</option>
+                        <option value="Suite">Suite</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Status</label>
+                    <select id="add_status" class="form-select">
+                        <option value="AVAILABLE">Available</option>
+                        <option value="OCCUPIED">Occupied</option>
+                        <option value="MAINTENANCE">Maintenance</option>
+                    </select>
+                </div>
+                <div id="addRoomErr" class="alert alert-danger d-none py-2"
+                     style="font-size:.85rem"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary"
+                        data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-hotel"
+                        id="addRoomSaveBtn" onclick="submitAddRoom()">
+                    <i class="bi bi-plus-lg me-1"></i>Add Room
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════ EDIT ROOM MODAL ══════════ -->
+<div class="modal fade" id="editRoomModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-pencil-square me-2"></i>Edit Room
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">
+                        Room Number <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" id="edit_roomNumber" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">
+                        Floor Number <span class="text-danger">*</span>
+                    </label>
+                    <input type="number" id="edit_floor" class="form-control"
+                           min="1" max="50">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Room Type</label>
+                    <select id="edit_type" class="form-select">
+                        <option value="Single">Single</option>
+                        <option value="Double">Double</option>
+                        <option value="Deluxe">Deluxe</option>
+                        <option value="Suite">Suite</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Status</label>
+                    <select id="edit_status" class="form-select">
+                        <option value="AVAILABLE">Available</option>
+                        <option value="OCCUPIED">Occupied</option>
+                        <option value="MAINTENANCE">Maintenance</option>
+                    </select>
+                </div>
+                <div id="editRoomErr" class="alert alert-danger d-none py-2"
+                     style="font-size:.85rem"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary"
+                        data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-hotel"
+                        id="editRoomSaveBtn" onclick="submitEditRoom()">
+                    <i class="bi bi-check-circle me-1"></i>Update Room
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════ DELETE ROOM MODAL ══════════ -->
+<div class="modal fade" id="deleteRoomModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <div class="modal-header" style="background:#dc3545">
+                <h5 class="modal-title text-white">
+                    <i class="bi bi-exclamation-triangle me-2"></i>Delete Room
+                </h5>
+                <button type="button" class="btn-close btn-close-white"
+                        data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <i class="bi bi-trash3 text-danger"
+                   style="font-size:2.5rem"></i>
+                <p class="mt-3 mb-1 fw-semibold">Delete Room
+                    <span id="del_roomLabel" class="text-danger"></span>?
+                </p>
+                <p class="text-muted mb-0" style="font-size:.85rem">
+                    This action cannot be undone.
+                </p>
+                <div id="deleteRoomErr" class="alert alert-danger d-none py-2 mt-3"
+                     style="font-size:.85rem"></div>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-secondary"
+                        data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger"
+                        id="deleteRoomConfirmBtn" onclick="submitDeleteRoom()">
+                    <i class="bi bi-trash me-1"></i>Delete
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="js/app.js"></script>
 <script>
@@ -494,6 +688,17 @@
                 }
                 document.getElementById('availResult').innerHTML = '';
             });
+
+        // Inject Add Room button for admins
+        if (Auth.isAdmin()) {
+            var addBtn = document.createElement('button');
+            addBtn.type = 'button';
+            addBtn.className = 'btn btn-hotel btn-sm';
+            addBtn.innerHTML = '<i class="bi bi-plus-lg me-1"></i>Add Room';
+            addBtn.onclick = openAddRoom;
+            var wrap = document.getElementById('roomHeaderBtns');
+            wrap.insertBefore(addBtn, wrap.firstChild);
+        }
 
         loadRooms();
     });
@@ -604,9 +809,17 @@
     function renderTable(list){
         var isAdmin = Auth.role() === 'admin';
         var rows = list.map(function(r){
+            var cfg = roomTypeConfig(r.typeName || 'Single');
             return '<tr>' +
-                '<td><span class="fw-bold" style="font-size:.95rem">' +
-                r.roomNumber + '</span></td>' +
+                '<td>' +
+                '<div class="d-flex align-items-center gap-2">' +
+                '<div class="room-thumb" style="background:' + cfg.bgLight + ';color:' + cfg.color + '">' +
+                '<i class="bi ' + cfg.icon + '"></i>' +
+                '</div>' +
+                '<span class="fw-bold" style="font-size:.95rem">' +
+                r.roomNumber + '</span>' +
+                '</div>' +
+                '</td>' +
                 '<td>' + floorLabel(r.floorNumber) + '</td>' +
                 '<td>' + typeTag(r.typeName)  + '</td>' +
                 '<td>' + statusBadge(r.roomStatus) + '</td>' +
@@ -620,12 +833,15 @@
                 (isAdmin
                     ? '<button type="button"' +
                     ' class="btn btn-sm btn-outline-warning"' +
-                    ' title="Update Status"' +
-                    ' onclick="openStatus(' + r.roomId +
-                    ',\'' + r.roomNumber + '\',\'' +
-                    (r.typeName||'') + '\',\'' +
-                    r.roomStatus + '\')">' +
-                    '<i class="bi bi-pencil"></i></button>'
+                    ' title="Edit Room"' +
+                    ' onclick="openEditRoom(' + r.roomId + ')">' +
+                    '<i class="bi bi-pencil"></i></button>' +
+                    '<button type="button"' +
+                    ' class="btn btn-sm btn-outline-danger"' +
+                    ' title="Delete Room"' +
+                    ' onclick="openDeleteRoom(' + r.roomId +
+                    ',\'' + r.roomNumber + '\')">' +
+                    '<i class="bi bi-trash"></i></button>'
                     : (r.roomStatus !== 'AVAILABLE'
                         ? '<button type="button"' +
                         ' class="btn btn-sm btn-outline-success"' +
@@ -653,16 +869,37 @@
     // ── Grid View ─────────────────────────────────────────────────
     function renderGrid(list){
         var isAdmin = Auth.role() === 'admin';
-        var cards = list.map(function(r){
+        var cards = list.map(/**
+         * Generates an HTML string representing a room card with details and action buttons.
+         *
+         * @param {Object} r - The room object containing properties for rendering the room card.
+         * @param {string} r.roomStatus - The current status of the room (e.g., 'AVAILABLE', 'OCCUPIED').
+         * @param {string} r.typeName - The type of the room (e.g., 'Single', 'Suite'). Defaults to 'Single' if not provided.
+         * @param {number} r.roomId - The unique identifier for the room.
+         * @param {string} r.roomNumber - The number assigned to the room.
+         * @param {number} r.floorNumber - The floor number where the room is located.
+         * @returns {string} - The composed HTML string for the room card.
+         */
+        function(r){
             var sc  = statusColor(r.roomStatus);
             var typ = r.typeName || 'Single';
+            var cfg = roomTypeConfig(typ);
             return '<div class="col-sm-6 col-lg-4 col-xl-3">' +
                 '<div class="room-grid-card">' +
 
-                // Status indicator strip
+                // Status indicator strip (runs full height, on top of banner)
                 '<div style="position:absolute;top:0;left:0;' +
                 'width:4px;height:100%;background:' +
-                sc + ';border-radius:12px 0 0 12px"></div>' +
+                sc + ';border-radius:12px 0 0 12px;z-index:1"></div>' +
+
+                // Room type image banner
+                '<div class="room-type-banner" style="' + bannerBg(cfg) + ';color:' + bannerTextColor(cfg) + '">' +
+                bannerOverlay(cfg) +
+                '<i class="bi ' + cfg.icon + ' rtb-icon"></i>' +
+                '<span class="rtb-label">' + cfg.label + '</span>' +
+                '<span class="rtb-status" style="color:' + sc + '">' +
+                r.roomStatus + '</span>' +
+                '</div>' +
 
                 '<div class="ps-2">' +
                 '<div class="d-flex justify-content-between' +
@@ -697,11 +934,15 @@
                 (isAdmin
                     ? '<button type="button"' +
                     ' class="btn btn-sm btn-outline-warning"' +
-                    ' onclick="openStatus(' + r.roomId +
-                    ',\'' + r.roomNumber + '\',\'' +
-                    (r.typeName||'') + '\',\'' +
-                    r.roomStatus + '\')">' +
-                    '<i class="bi bi-pencil"></i></button>'
+                    ' title="Edit Room"' +
+                    ' onclick="openEditRoom(' + r.roomId + ')">' +
+                    '<i class="bi bi-pencil"></i></button>' +
+                    '<button type="button"' +
+                    ' class="btn btn-sm btn-outline-danger"' +
+                    ' title="Delete Room"' +
+                    ' onclick="openDeleteRoom(' + r.roomId +
+                    ',\'' + r.roomNumber + '\')">' +
+                    '<i class="bi bi-trash"></i></button>'
                     : (r.roomStatus !== 'AVAILABLE'
                         ? '<button type="button"' +
                         ' class="btn btn-sm btn-outline-success"' +
@@ -733,7 +974,23 @@
             Toast.show('Room not found','warning'); return;
         }
 
+        var cfg = roomTypeConfig(room.typeName || 'Single');
+        var sc  = statusColor(room.roomStatus);
         document.getElementById('viewBody').innerHTML =
+            // Room type image banner
+            '<div style="height:140px;' + bannerBg(cfg) + ';' +
+            'display:flex;flex-direction:column;align-items:center;' +
+            'justify-content:center;color:' + cfg.color + ';' +
+            'border-radius:8px;margin-bottom:1rem;position:relative;overflow:hidden">' +
+            '<i class="bi ' + cfg.icon + '" style="font-size:3.5rem;opacity:.85"></i>' +
+            '<span style="font-size:.75rem;font-weight:700;letter-spacing:.8px;' +
+            'text-transform:uppercase;margin-top:.5rem;opacity:.8">' +
+            cfg.label + '</span>' +
+            '<span style="position:absolute;top:10px;right:12px;' +
+            'font-size:.72rem;font-weight:700;padding:.25rem .65rem;' +
+            'border-radius:20px;background:rgba(255,255,255,.85);color:' + sc + '">' +
+            room.roomStatus + '</span>' +
+            '</div>' +
             '<table class="table table-bordered mb-0"' +
             ' style="font-size:.875rem"><tbody>' +
             vrow('Room Number', room.roomNumber) +
@@ -792,6 +1049,135 @@
         } catch(err){
             Toast.show(err.message, 'error');
         }
+    }
+
+    // ══════════════════════════════════════════════
+    //  ADD ROOM (Admin only)
+    // ══════════════════════════════════════════════
+    function openAddRoom(){
+        document.getElementById('add_roomNumber').value = '';
+        document.getElementById('add_floor').value      = '';
+        document.getElementById('add_type').value       = 'Single';
+        document.getElementById('add_status').value     = 'AVAILABLE';
+        document.getElementById('addRoomErr').classList.add('d-none');
+        getModal('addRoomModal').show();
+    }
+
+    async function submitAddRoom(){
+        document.getElementById('addRoomErr').classList.add('d-none');
+        var roomNumber = document.getElementById('add_roomNumber').value.trim();
+        var floor      = parseInt(document.getElementById('add_floor').value);
+        var typeName   = document.getElementById('add_type').value;
+        var status     = document.getElementById('add_status').value;
+
+        if (!roomNumber){
+            showModalErr('addRoomErr','Room number is required.'); return;
+        }
+        if (!floor || floor < 1 || floor > 50){
+            showModalErr('addRoomErr','Floor must be between 1 and 50.'); return;
+        }
+
+        var btn = document.getElementById('addRoomSaveBtn');
+        btn.disabled = true;
+        try {
+            await API.post('api/rooms', {
+                roomNumber : roomNumber,
+                floorNumber: floor,
+                typeName   : typeName,
+                roomStatus : status
+            });
+            getModal('addRoomModal').hide();
+            Toast.show('Room ' + roomNumber + ' created successfully', 'success');
+            loadRooms();
+        } catch(err){
+            showModalErr('addRoomErr', err.message);
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    // ══════════════════════════════════════════════
+    //  EDIT ROOM (Admin only)
+    // ══════════════════════════════════════════════
+    var editRoomId = 0;
+
+    function openEditRoom(roomId){
+        var room = allRooms.find(function(r){ return r.roomId === roomId; });
+        if (!room){ Toast.show('Room not found','warning'); return; }
+        editRoomId = roomId;
+        document.getElementById('edit_roomNumber').value = room.roomNumber;
+        document.getElementById('edit_floor').value      = room.floorNumber;
+        document.getElementById('edit_type').value       = room.typeName || 'Single';
+        document.getElementById('edit_status').value     = room.roomStatus;
+        document.getElementById('editRoomErr').classList.add('d-none');
+        getModal('editRoomModal').show();
+    }
+
+    async function submitEditRoom(){
+        document.getElementById('editRoomErr').classList.add('d-none');
+        var roomNumber = document.getElementById('edit_roomNumber').value.trim();
+        var floor      = parseInt(document.getElementById('edit_floor').value);
+        var typeName   = document.getElementById('edit_type').value;
+        var status     = document.getElementById('edit_status').value;
+
+        if (!roomNumber){
+            showModalErr('editRoomErr','Room number is required.'); return;
+        }
+        if (!floor || floor < 1 || floor > 50){
+            showModalErr('editRoomErr','Floor must be between 1 and 50.'); return;
+        }
+
+        var btn = document.getElementById('editRoomSaveBtn');
+        btn.disabled = true;
+        try {
+            await API.put('api/rooms/' + editRoomId, {
+                roomNumber : roomNumber,
+                floorNumber: floor,
+                typeName   : typeName,
+                roomStatus : status
+            });
+            getModal('editRoomModal').hide();
+            Toast.show('Room ' + roomNumber + ' updated successfully', 'success');
+            loadRooms();
+        } catch(err){
+            showModalErr('editRoomErr', err.message);
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    // ══════════════════════════════════════════════
+    //  DELETE ROOM (Admin only)
+    // ══════════════════════════════════════════════
+    var deleteRoomId = 0;
+
+    function openDeleteRoom(roomId, roomNumber){
+        deleteRoomId = roomId;
+        document.getElementById('del_roomLabel').textContent = roomNumber;
+        document.getElementById('deleteRoomErr').classList.add('d-none');
+        getModal('deleteRoomModal').show();
+    }
+
+    async function submitDeleteRoom(){
+        document.getElementById('deleteRoomErr').classList.add('d-none');
+        var btn = document.getElementById('deleteRoomConfirmBtn');
+        btn.disabled = true;
+        try {
+            await API.delete('api/rooms/' + deleteRoomId);
+            getModal('deleteRoomModal').hide();
+            Toast.show('Room deleted successfully', 'success');
+            loadRooms();
+        } catch(err){
+            showModalErr('deleteRoomErr', err.message);
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    function showModalErr(id, msg){
+        var el = document.getElementById(id);
+        el.textContent = msg;
+        el.classList.remove('d-none');
     }
 
     // ══════════════════════════════════════════════
@@ -875,14 +1261,22 @@
                     typeTag(t) + ' <span class="ms-1 text-muted">' +
                     grouped[t].length + ' available</span></div>' +
                     '<div class="row g-2">';
+                var tcfg = roomTypeConfig(t);
                 grouped[t].forEach(function(r){
                     html +=
                         '<div class="col-md-4 col-sm-6">' +
                         '<div class="avail-card">' +
-                        '<div class="fw-600">Room ' + r.roomNumber + '</div>' +
+                        '<div class="avail-banner" style="' + bannerBg(tcfg) + ';color:' + tcfg.color + ';overflow:hidden">' +
+                        '<i class="bi ' + tcfg.icon + '"></i>' +
+                        '</div>' +
+                        '<div class="avail-body">' +
+                        '<div class="fw-semibold" style="font-size:.875rem">' +
+                        'Room ' + r.roomNumber + '</div>' +
                         '<small class="text-muted">' +
-                        'Floor ' + r.floorNumber +
+                        '<i class="bi bi-layers me-1"></i>' +
+                        floorLabel(r.floorNumber) +
                         '</small>' +
+                        '</div>' +
                         '</div></div>';
                 });
                 html += '</div></div>';
@@ -901,6 +1295,58 @@
     // ══════════════════════════════════════════════
     //  HELPERS
     // ══════════════════════════════════════════════
+
+    // Room type visual config — gradient, icon, color, optional photo
+    function roomTypeConfig(type){
+        var map = {
+            Single: {
+                bg     : 'linear-gradient(135deg,#e3f2fd,#90caf9)',
+                bgLight: '#e3f2fd',
+                color  : '#1565c0',
+                icon   : 'bi-house-door-fill',
+                label  : 'Single Room'
+            },
+            Double: {
+                bg     : 'linear-gradient(135deg,#e8f5e9,#81c784)',
+                bgLight: '#e8f5e9',
+                color  : '#2e7d32',
+                icon   : 'bi-houses-fill',
+                label  : 'Double Room'
+            },
+            Deluxe: {
+                bg     : 'linear-gradient(135deg,#fff3e0,#ffb74d)',
+                bgLight: '#fff3e0',
+                color  : '#e65100',
+                icon   : 'bi-stars',
+                label  : 'Deluxe Room',
+                image  : 'images/rooms/deluxe-room.jpg'
+            },
+            Suite: {
+                bg     : 'linear-gradient(135deg,#f3e5f5,#ba68c8)',
+                bgLight: '#f3e5f5',
+                color  : '#6a1b9a',
+                icon   : 'bi-gem',
+                label  : 'Luxury Suite'
+            }
+        };
+        return map[type] || map.Single;
+    }
+
+    // Returns the CSS background string for a banner
+    function bannerBg(cfg){
+        if (cfg.image)
+            return 'background-color:' + cfg.bgLight + ';' +
+                   'background-image:url("' + cfg.image + '");' +
+                   'background-size:cover;background-position:center';
+        return 'background:' + cfg.bg;
+    }
+
+    // No overlay — photo shows clean
+    function bannerOverlay(cfg){ return ''; }
+
+    // Always use the type color (readable on both gradient and photo)
+    function bannerTextColor(cfg){ return cfg.color; }
+
     function floorLabel(f){
         if (!f && f !== 0) return '—';
         var s = ['th','st','nd','rd'];

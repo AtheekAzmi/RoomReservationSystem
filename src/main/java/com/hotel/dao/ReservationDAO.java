@@ -105,6 +105,18 @@ public class ReservationDAO {
         } catch (SQLException e) { e.printStackTrace(); return false; }
     }
 
+    public int countActiveByRoomId(int roomId) {
+        String sql = "SELECT COUNT(*) FROM reservation " +
+                     "WHERE room_id=? AND status NOT IN ('CANCELLED','CHECKED_OUT')";
+        try (Connection c = DatabaseConfig.getInstance().getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, roomId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) return rs.getInt(1);
+        } catch (SQLException e) { e.printStackTrace(); }
+        return 0;
+    }
+
     public int countByStaffId(int staffId) {
         String sql = "SELECT COUNT(*) FROM reservation WHERE staff_id=?";
         try (Connection c = DatabaseConfig.getInstance().getConnection();
