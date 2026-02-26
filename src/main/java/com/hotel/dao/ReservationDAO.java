@@ -105,6 +105,17 @@ public class ReservationDAO {
         } catch (SQLException e) { e.printStackTrace(); return false; }
     }
 
+    public int countByStaffId(int staffId) {
+        String sql = "SELECT COUNT(*) FROM reservation WHERE staff_id=?";
+        try (Connection c = DatabaseConfig.getInstance().getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, staffId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) return rs.getInt(1);
+        } catch (SQLException e) { e.printStackTrace(); }
+        return 0;
+    }
+
     public boolean update(Reservation r) {
         String sql = "UPDATE reservation SET room_id=?, checkin_date=?, " +
                 "checkout_date=?, status=? WHERE reservation_number=?";

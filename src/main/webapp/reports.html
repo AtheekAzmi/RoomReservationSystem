@@ -116,32 +116,48 @@
         <div class="filter-bar no-print">
             <div class="row g-2 align-items-end">
                 <div class="col-auto">
-                    <i class="bi bi-funnel me-1" style="opacity:.7"></i>
-                    <span style="font-weight:700;font-size:.9rem">Date Range Filter</span>
+                    <i class="bi bi-calendar3 me-1" style="opacity:.7"></i>
+                    <span style="font-weight:700;font-size:.9rem">Report Period</span>
                 </div>
-                <div class="col-md-2">
-                    <label>From Date</label>
-                    <input type="date" id="fromDate" class="form-control form-control-sm">
+                <!-- Period Quick Buttons -->
+                <div class="col-auto">
+                    <div class="d-flex gap-1 flex-wrap">
+                        <button type="button" id="btn-daily"   class="btn btn-sm btn-outline-light period-btn" onclick="setPeriod('daily')">
+                            <i class="bi bi-calendar-day me-1"></i>Daily
+                        </button>
+                        <button type="button" id="btn-weekly"  class="btn btn-sm btn-outline-light period-btn" onclick="setPeriod('weekly')">
+                            <i class="bi bi-calendar-week me-1"></i>Weekly
+                        </button>
+                        <button type="button" id="btn-monthly" class="btn btn-sm btn-outline-light period-btn" onclick="setPeriod('monthly')">
+                            <i class="bi bi-calendar-month me-1"></i>Monthly
+                        </button>
+                        <button type="button" id="btn-yearly"  class="btn btn-sm btn-outline-light period-btn" onclick="setPeriod('yearly')">
+                            <i class="bi bi-calendar-range me-1"></i>Yearly
+                        </button>
+                        <button type="button" id="btn-custom"  class="btn btn-sm btn-outline-light period-btn" onclick="setPeriod('custom')">
+                            <i class="bi bi-sliders me-1"></i>Custom
+                        </button>
+                    </div>
                 </div>
-                <div class="col-md-2">
-                    <label>To Date</label>
-                    <input type="date" id="toDate" class="form-control form-control-sm">
-                </div>
-                <div class="col-auto d-flex gap-2">
+                <!-- Custom date inputs (shown only in custom mode) -->
+                <div class="col-auto d-flex gap-2 align-items-end" id="customDateWrap" style="display:none!important">
+                    <div>
+                        <label style="font-size:.75rem;opacity:.85;margin-bottom:.2rem;display:block">From</label>
+                        <input type="date" id="fromDate" class="form-control form-control-sm">
+                    </div>
+                    <div>
+                        <label style="font-size:.75rem;opacity:.85;margin-bottom:.2rem;display:block">To</label>
+                        <input type="date" id="toDate" class="form-control form-control-sm">
+                    </div>
                     <button type="button" class="btn btn-warning btn-sm fw-bold" onclick="applyFilter()">
                         <i class="bi bi-funnel-fill me-1"></i>Apply
                     </button>
-                    <button type="button" class="btn btn-outline-light btn-sm" onclick="resetFilter()">
-                        <i class="bi bi-x-circle me-1"></i>Reset
-                    </button>
                 </div>
+                <!-- Generate Button -->
                 <div class="col-auto ms-auto">
-                    <div class="d-flex gap-1 flex-wrap">
-                        <button type="button" class="btn btn-sm btn-outline-light" onclick="setQuickRange(7)">7 Days</button>
-                        <button type="button" class="btn btn-sm btn-outline-light" onclick="setQuickRange(30)">30 Days</button>
-                        <button type="button" class="btn btn-sm btn-outline-light" onclick="setQuickRange(90)">90 Days</button>
-                        <button type="button" class="btn btn-sm btn-outline-light" onclick="setQuickRange(365)">1 Year</button>
-                    </div>
+                    <button type="button" class="btn btn-warning btn-sm fw-bold px-3" onclick="generateReport()">
+                        <i class="bi bi-file-earmark-bar-graph me-1"></i>Generate Report
+                    </button>
                 </div>
             </div>
             <div id="filterLabel" class="mt-2" style="font-size:.8rem;opacity:.75"></div>
@@ -338,16 +354,93 @@
     var filterFrom      = null;
     var filterTo        = null;
 
+    var currentPeriod = 'monthly'; // track active period
+
     document.addEventListener('DOMContentLoaded', function(){
         initPage('reports.html');
-        // Default: last 30 days
-        setQuickRange(30, false);
+
+        // Admin-only guard
+        if (!Auth.isAdmin()){
+            document.querySelector('.content-area').innerHTML =
+                '<div class="text-center py-5">' +
+                '<div style="width:80px;height:80px;background:#fee2e2;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:2rem;color:#c62828"><i class="bi bi-shield-x"></i></div>' +
+                '<h4 style="color:#c62828" class="fw-bold">Access Denied</h4>' +
+                '<p class="text-muted">Only administrators can access the Reports page.</p>' +
+                '<a href="dashboard.html" class="btn btn-hotel px-4 mt-2"><i class="bi bi-arrow-left me-1"></i>Back to Dashboard</a>' +
+                '</div>';
+            return;
+        }
+
+        // Default: monthly
+        setPeriod('monthly', false);
         loadReports();
     });
 
     // ══════════════════════════════════════════════
-    //  DATE FILTER HELPERS
+    //  PERIOD / DATE FILTER HELPERS
     // ══════════════════════════════════════════════
+    function setPeriod(period, reload){
+        currentPeriod = period;
+
+        // Highlight active button
+        document.querySelectorAll('.period-btn').forEach(function(b){
+            b.classList.remove('btn-warning');
+            b.classList.add('btn-outline-light');
+        });
+        var activeBtn = document.getElementById('btn-' + period);
+        if (activeBtn){
+            activeBtn.classList.remove('btn-outline-light');
+            activeBtn.classList.add('btn-warning');
+        }
+
+        // Show/hide custom date inputs
+        var wrap = document.getElementById('customDateWrap');
+        if (period === 'custom'){
+            wrap.style.setProperty('display', 'flex', 'important');
+            return; // wait for user to click Apply
+        } else {
+            wrap.style.setProperty('display', 'none', 'important');
+        }
+
+        var now   = new Date();
+        var from  = new Date();
+        var to    = new Date();
+
+        if (period === 'daily'){
+            // Today only
+            from = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            to   = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+        } else if (period === 'weekly'){
+            // Monday–Sunday of current week
+            var day = now.getDay() || 7; // Mon=1…Sun=7
+            from = new Date(now);
+            from.setDate(now.getDate() - day + 1);
+            from.setHours(0,0,0,0);
+            to   = new Date(from);
+            to.setDate(from.getDate() + 6);
+            to.setHours(23,59,59,999);
+        } else if (period === 'monthly'){
+            // First–last day of current month
+            from = new Date(now.getFullYear(), now.getMonth(), 1);
+            to   = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+        } else if (period === 'yearly'){
+            // Jan 1 – Dec 31 of current year
+            from = new Date(now.getFullYear(), 0, 1);
+            to   = new Date(now.getFullYear(), 11, 31, 23, 59, 59);
+        }
+
+        document.getElementById('fromDate').value = from.toISOString().slice(0,10);
+        document.getElementById('toDate').value   = to.toISOString().slice(0,10);
+        filterFrom = from;
+        filterTo   = to;
+
+        if (reload !== false){
+            updateFilterLabel();
+            renderAll();
+        }
+    }
+
+    // Legacy helper kept for compatibility
     function setQuickRange(days, reload){
         var to   = new Date();
         var from = new Date();
@@ -369,21 +462,38 @@
     }
 
     function resetFilter(){
-        document.getElementById('fromDate').value = '';
-        document.getElementById('toDate').value   = '';
-        filterFrom = null;
-        filterTo   = null;
-        updateFilterLabel();
-        renderAll();
+        setPeriod('monthly');
     }
 
     function updateFilterLabel(){
         var lbl = document.getElementById('filterLabel');
+        var periodNames = { daily:'Today', weekly:'This Week', monthly:'This Month', yearly:'This Year', custom:'Custom Range' };
+        var name = periodNames[currentPeriod] || '';
         if (!filterFrom && !filterTo){ lbl.textContent = 'Showing all-time data'; return; }
         var parts = [];
+        if (name)       parts.push('<strong>' + name + '</strong>');
         if (filterFrom) parts.push('From: ' + filterFrom.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}));
         if (filterTo)   parts.push('To: '   + filterTo.toLocaleDateString('en-US',  {month:'short',day:'numeric',year:'numeric'}));
-        lbl.textContent = parts.join('  ·  ');
+        lbl.innerHTML = parts.join('  ·  ');
+    }
+
+    // ══════════════════════════════════════════════
+    //  GENERATE REPORT
+    // ══════════════════════════════════════════════
+    function generateReport(){
+        if (currentPeriod === 'custom'){
+            applyFilter();
+        } else {
+            setPeriod(currentPeriod);
+        }
+        // Scroll to report content
+        var rc = document.getElementById('reportContent');
+        if (rc && !rc.classList.contains('d-none')){
+            rc.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        Toast.show('Report generated for ' +
+            ({ daily:'Today', weekly:'This Week', monthly:'This Month', yearly:'This Year', custom:'Custom Range' }[currentPeriod] || currentPeriod),
+            'success', 2500);
     }
 
     function inRange(dateStr){

@@ -17,6 +17,7 @@ public class ReportServlet extends BaseServlet {
     protected void doGet(HttpServletRequest req,
                          HttpServletResponse res) throws IOException {
         if (!isAuthenticated(req)) { sendError(res,401,"Unauthorized"); return; }
+        if (!isAdmin(req))         { sendError(res,403,"Admin only");    return; }
 
         String from = req.getParameter("from") != null
                 ? req.getParameter("from")
@@ -49,18 +50,3 @@ public class ReportServlet extends BaseServlet {
         }
     }
 }
-//```
-//
-//        ---
-//
-//        ## Step 6 — Move HTML to `webapp/`
-//
-//Move all your HTML/CSS/JS files:
-//        ```
-//src/main/webapp/
-//        ├── index.html
-//├── dashboard.html
-//├── css/
-//        │   └── style.css
-//└── js/
-//        └── app.js

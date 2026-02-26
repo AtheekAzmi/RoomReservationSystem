@@ -1,5 +1,6 @@
 package com.hotel.service;
 
+import com.hotel.dao.ReservationDAO;
 import com.hotel.dao.StaffDAO;
 import com.hotel.model.Staff;
 import com.hotel.util.PasswordUtil;
@@ -9,7 +10,8 @@ import java.util.List;
 
 public class StaffService {
 
-    private final StaffDAO staffDAO = new StaffDAO();
+    private final StaffDAO       staffDAO = new StaffDAO();
+    private final ReservationDAO resDAO   = new ReservationDAO();
 
     public String getAllStaff() {
         List<Staff> list = staffDAO.findAll();
@@ -36,7 +38,7 @@ public class StaffService {
             throw new IllegalArgumentException("Password must contain at least one digit");
         if (fullName.length() < 2)
             throw new IllegalArgumentException("Full name is required");
-        if (!email.matches("^[\\w.+\\-]+@[\\w\\-]+\\.[a-zA-Z]{2,}$"))
+        if (!email.isEmpty() && !email.matches("^[\\w.+\\-]+@[\\w\\-]+\\.[a-zA-Z]{2,}$"))
             throw new IllegalArgumentException("Invalid email address");
         if (!List.of("admin","receptionist").contains(role))
             throw new IllegalArgumentException("Role must be admin or receptionist");
@@ -59,7 +61,7 @@ public class StaffService {
 
         if (fullName.length() < 2)
             throw new IllegalArgumentException("Full name is required");
-        if (!email.matches("^[\\w.+\\-]+@[\\w\\-]+\\.[a-zA-Z]{2,}$"))
+        if (!email.isEmpty() && !email.matches("^[\\w.+\\-]+@[\\w\\-]+\\.[a-zA-Z]{2,}$"))
             throw new IllegalArgumentException("Invalid email");
         if (!List.of("admin","receptionist").contains(role))
             throw new IllegalArgumentException("Invalid role");
@@ -76,6 +78,9 @@ public class StaffService {
     public String deleteStaff(int staffId) {
         Staff s = staffDAO.findById(staffId);
         if (s == null) throw new IllegalArgumentException("Staff not found");
+        if (resDAO.countByStaffId(staffId) > 0)
+            throw new IllegalArgumentException(
+                "Cannot delete staff with existing reservations. Reassign their reservations first.");
         boolean ok = staffDAO.delete(staffId);
         if (!ok) throw new RuntimeException("Delete failed");
         return new JSONObject().put("message", "Staff deleted").toString();
