@@ -602,7 +602,7 @@
 
     // ── Table View ────────────────────────────────────────────────
     function renderTable(list){
-        var isAdmin = API.role() === 'admin';
+        var isAdmin = Auth.role() === 'admin';
         var rows = list.map(function(r){
             return '<tr>' +
                 '<td><span class="fw-bold" style="font-size:.95rem">' +
@@ -645,7 +645,7 @@
 
     // ── Grid View ─────────────────────────────────────────────────
     function renderGrid(list){
-        var isAdmin = API.role() === 'admin';
+        var isAdmin = Auth.role() === 'admin';
         var cards = list.map(function(r){
             var sc  = statusColor(r.roomStatus);
             var typ = r.typeName || 'Single';
