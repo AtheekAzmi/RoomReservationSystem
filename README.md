@@ -1,4 +1,4 @@
-# 🏨 Room Reservation System
+# 🏨 Online Room Reservation System
 
 A web-based **Room Reservation Management System** built with Java (Servlets/JSP) and deployed on Apache Tomcat. This system enables hotel staff to manage guest reservations, room availability, billing, and staff accounts through a structured and role-based interface.
 
