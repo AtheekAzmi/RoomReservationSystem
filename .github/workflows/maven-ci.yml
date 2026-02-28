@@ -1,0 +1,67 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# File:    .github/workflows/maven-ci.yml
+# Project: Room Reservation System
+# Author:  AtheekAzmi
+# Repo:    https://github.com/AtheekAzmi/RoomReservationSystem
+#
+# Purpose: Continuous Integration pipeline — automatically builds and runs all
+#          66 JUnit 5 tests on every push to master and on every pull request.
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: Java CI with Maven
+
+# ── Trigger conditions ────────────────────────────────────────────────────────
+on:
+  push:
+    branches: [ master ]          # Run on every push to master
+  pull_request:
+    branches: [ master ]          # Run on every PR targeting master
+
+# ── Jobs ─────────────────────────────────────────────────────────────────────
+jobs:
+  build-and-test:
+    name: Build and Run All Tests
+    runs-on: ubuntu-latest         # Fresh Ubuntu virtual machine for each run
+
+    steps:
+
+      # Step 1: Check out the repository code onto the runner
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Install Java 11 (Temurin distribution) with Maven cache
+      - name: Set up JDK 11
+        uses: actions/setup-java@v4
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+          cache: maven              # Cache ~/.m2 to speed up subsequent runs
+
+      # Step 3: Compile all Java sources — fails if there are syntax errors
+      - name: Build with Maven
+        run: mvn compile --batch-mode --no-transfer-progress
+
+      # Step 4: Run the full JUnit 5 test suite (66 tests across 8 classes)
+      - name: Run All Tests
+        run: mvn test --batch-mode --no-transfer-progress
+
+      # Step 5: Upload Surefire test reports (always runs, even if tests fail)
+      - name: Upload Test Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-test-reports
+          path: target/surefire-reports/
+          retention-days: 30        # Keep reports for 30 days
+
+      # Step 6: Upload the built WAR file as a deployment artifact
+      - name: Upload WAR Artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: RoomReservationSystem-war
+          path: target/*.war
+          retention-days: 30
+
+# ── Status badge (add this to README.md) ─────────────────────────────────────
+# [![Java CI with Maven](https://github.com/AtheekAzmi/RoomReservationSystem/actions/workflows/maven-ci.yml/badge.svg)](https://github.com/AtheekAzmi/RoomReservationSystem/actions/workflows/maven-ci.yml)
