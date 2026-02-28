@@ -4,7 +4,12 @@
       "Bash(node:*)",
       "Bash(cat:*)",
       "Bash(grep:*)",
-      "Bash(mysql:*)"
+      "Bash(mysql:*)",
+      "Bash(\"$MVN\" dependency:resolve:*)",
+      "Bash(cmd.exe:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(mvn test:*)",
+      "Bash(echo PATH: $PATH:*)"
     ]
   }
 }
