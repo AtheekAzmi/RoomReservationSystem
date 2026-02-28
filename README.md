@@ -240,7 +240,6 @@ mvn test
 | Contributor | Role |
 |---|---|
 | [AtheekAzmi](https://github.com/AtheekAzmi) | Lead Developer |
-| Collaborator | Developer |
 
 ---
 
