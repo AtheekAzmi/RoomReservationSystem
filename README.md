@@ -1,4 +1,4 @@
-# 🏨 Room Reservation System
+# 🏨 Online Room Reservation System
 
 ![Java CI with Maven](https://github.com/AtheekAzmi/RoomReservationSystem/actions/workflows/maven-ci.yml/badge.svg)
 ![Java](https://img.shields.io/badge/Java-30.6%25-orange)
@@ -41,7 +41,7 @@ A full-featured hotel room reservation management system built with **Java (Serv
 
 | Technology | Version | Purpose |
 |---|---|---|
-| Java | 11 | Core backend logic, Servlets, business models |
+| Java | 17 | Core backend logic, Servlets, business models |
 | HTML / CSS / JS | — | Frontend UI (65.2% of codebase) |
 | Maven | 3.6+ | Build tool, dependency management |
 | JUnit 5 | 5.x | Unit and integration testing |
